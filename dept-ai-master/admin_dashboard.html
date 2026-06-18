@@ -1,1151 +1,1138 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <title>NBKR Admin Dashboard</title>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-  <style>
-    :root {
-      --primary: #6366f1; --primary-dark: #4f46e5;
-      --primary-glow: rgba(99,102,241,0.15);
-      --bg-dark: #030712; --panel-bg: rgba(10,15,30,0.45);
-      --glass-border: rgba(255,255,255,0.08);
-      --text-main: #f1f5f9; --text-muted: #94a3b8;
-      --accent-green: #10b981; --accent-red: #ef4444;
-    }
-    *{margin:0;padding:0;box-sizing:border-box}
-    body{font-family:'Outfit',sans-serif;background:var(--bg-dark);color:var(--text-main);
-      height:100vh;display:flex;justify-content:center;align-items:center;overflow:hidden}
-    @keyframes fadeIn{from{opacity:0}to{opacity:1}}
-    @keyframes pop{from{opacity:0;transform:scale(.92)}to{opacity:1;transform:scale(1)}}
-    @keyframes tabSlide{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
-    @keyframes slideUp{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
-    .admin-container{position:relative;z-index:1;display:flex;width:98vw;max-width:1600px;
-      height:95vh;background:var(--panel-bg);backdrop-filter:blur(28px);
-      border:1px solid var(--glass-border);border-radius:20px;overflow:hidden;
-      box-shadow:0 25px 50px -12px rgba(0,0,0,.6)}
-    .sidebar{width:260px;min-width:260px;height:100%;background:rgba(8,12,24,.6);
-      border-right:1px solid var(--glass-border);display:flex;flex-direction:column;
-      padding:20px;gap:16px}
-    .sidebar-header{display:flex;align-items:center;gap:10px;padding-bottom:14px;
-      border-bottom:1px solid rgba(255,255,255,.06)}
-    .sidebar-header h2{font-size:17px;font-weight:700;
-      background:linear-gradient(to right,#fff,#c7d2fe);-webkit-background-clip:text;
-      -webkit-text-fill-color:transparent}
-    .sidebar-header p{font-size:11px;color:var(--text-muted)}
-    .sidebar-stats{display:grid;grid-template-columns:1fr 1fr;gap:8px;padding-bottom:12px;
-      border-bottom:1px solid rgba(255,255,255,.06)}
-    .stat-chip{background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.06);
-      border-radius:10px;padding:10px;text-align:center}
-    .stat-chip .stat-val{font-size:20px;font-weight:700;color:var(--primary)}
-    .stat-chip .stat-label{font-size:10px;color:var(--text-muted);text-transform:uppercase;letter-spacing:.5px}
-    .nav-tabs{display:flex;flex-direction:column;gap:6px;flex:1}
-    .tab-btn{width:100%;background:rgba(255,255,255,.02);border:1px solid rgba(255,255,255,.04);
-      padding:11px 14px;border-radius:10px;color:#cbd5e1;font-size:13px;font-weight:500;
-      text-align:left;cursor:pointer;font-family:inherit;transition:all .2s;
-      display:flex;align-items:center;gap:10px;border-left:3px solid transparent}
-    .tab-btn:hover,.tab-btn.active{background:rgba(99,102,241,.08);
-      border-color:rgba(99,102,241,.25);border-left-color:var(--primary);color:#fff}
-    .tab-btn .badge{margin-left:auto;background:rgba(99,102,241,.2);color:#a5b4fc;
-      font-size:11px;font-weight:600;padding:2px 7px;border-radius:9px}
-    .sidebar-footer{display:flex;flex-direction:column;gap:7px}
-    .back-btn{background:rgba(99,102,241,.06);border:1px solid rgba(99,102,241,.15);
-      color:#a5b4fc;padding:9px;border-radius:10px;cursor:pointer;font-family:inherit;
-      font-size:13px;font-weight:600;text-align:center;text-decoration:none;display:block}
-    .back-btn:hover{background:rgba(99,102,241,.12)}
-    .logout-btn{background:rgba(239,68,68,.06);border:1px solid rgba(239,68,68,.15);
-      color:#f87171;padding:9px;border-radius:10px;cursor:pointer;font-family:inherit;
-      font-size:13px;font-weight:600;text-align:center}
-    .logout-btn:hover{background:rgba(239,68,68,.15)}
-    .content-pane{flex:1;display:flex;flex-direction:column;height:100%;overflow:hidden;
-      background:rgba(4,6,12,.2)}
-    .header-bar{padding:16px 28px;background:rgba(10,16,32,.6);
-      border-bottom:1px solid var(--glass-border);display:flex;align-items:center;
-      justify-content:space-between}
-    .header-bar h1{font-size:19px;font-weight:700;
-      background:linear-gradient(to right,#fff,#a5b4fc);-webkit-background-clip:text;
-      -webkit-text-fill-color:transparent}
-    .save-status{font-size:12px;font-weight:500;padding:5px 13px;border-radius:18px;
-      display:none;animation:fadeIn .3s}
-    .save-status.success{display:block;background:rgba(16,185,129,.12);color:#34d399;
-      border:1px solid rgba(16,185,129,.3)}
-    .editor-body{flex:1;padding:24px 28px;overflow-y:auto}
-    .editor-body::-webkit-scrollbar{width:5px}
-    .editor-body::-webkit-scrollbar-thumb{background:rgba(255,255,255,.1);border-radius:3px}
-    .tab-panel{display:none;animation:tabSlide .3s ease forwards}
-    .tab-panel.active{display:block}
-    .form-group{margin-bottom:16px;display:flex;flex-direction:column;gap:7px}
-    .form-row{display:grid;grid-template-columns:repeat(2,1fr);gap:16px;margin-bottom:16px}
-    label{font-size:12px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:.3px}
-    input,select,textarea{background:rgba(10,15,30,.85);border:1px solid var(--glass-border);
-      color:var(--text-main);padding:10px 14px;border-radius:10px;font-family:inherit;
-      font-size:13px;outline:none;transition:all .2s;width:100%}
-    input:focus,select:focus,textarea:focus{border-color:var(--primary);box-shadow:0 0 0 3px var(--primary-glow)}
-    textarea{resize:vertical;min-height:90px}
-    .btn-primary{background:linear-gradient(135deg,var(--primary) 0%,#8b5cf6 100%);
-      border:none;color:#fff;padding:10px 20px;border-radius:10px;font-size:13px;
-      font-weight:600;cursor:pointer;font-family:inherit;transition:all .2s;
-      box-shadow:0 4px 14px rgba(99,102,241,.3);display:inline-flex;align-items:center;gap:7px}
-    .btn-primary:hover{transform:translateY(-1px);box-shadow:0 6px 20px rgba(99,102,241,.4)}
-    .btn-secondary{background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);
-      color:var(--text-main);padding:8px 16px;border-radius:10px;font-size:12px;
-      font-weight:600;cursor:pointer;font-family:inherit;transition:all .2s}
-    .btn-secondary:hover{background:rgba(255,255,255,.1)}
-    .btn-danger{background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.25);
-      color:#f87171;padding:7px 11px;border-radius:9px;font-size:12px;font-weight:600;
-      cursor:pointer;font-family:inherit;transition:all .2s}
-    .btn-danger:hover{background:rgba(239,68,68,.2)}
-    .editor-section{background:rgba(255,255,255,.015);border:1px solid var(--glass-border);
-      border-radius:16px;padding:20px;margin-bottom:20px;animation:slideUp .3s ease}
-    .flex-header{display:flex;justify-content:space-between;align-items:center;
-      margin-bottom:16px;border-bottom:1px solid rgba(255,255,255,.06);padding-bottom:10px}
-    .flex-header h3{font-size:15px;font-weight:600}
-    .split-layout{display:grid;grid-template-columns:260px 1fr;gap:20px}
-    .items-list{border:1px solid var(--glass-border);border-radius:10px;height:440px;
-      overflow-y:auto;background:rgba(0,0,0,.2)}
-    .items-list::-webkit-scrollbar{width:4px}
-    .items-list::-webkit-scrollbar-thumb{background:rgba(255,255,255,.08);border-radius:2px}
-    .list-item{padding:11px 14px;border-bottom:1px solid rgba(255,255,255,.04);cursor:pointer;
-      font-size:13px;transition:all .15s;display:flex;justify-content:space-between;align-items:center}
-    .list-item:hover,.list-item.active{background:rgba(99,102,241,.08);color:#fff}
-    .list-item.active{border-left:3px solid var(--primary)}
-    .form-pane{background:rgba(255,255,255,.005);border:1px solid var(--glass-border);
-      border-radius:14px;padding:20px;display:flex;flex-direction:column;gap:14px}
-    .admin-table{width:100%;border-collapse:collapse;margin-top:8px;margin-bottom:16px;font-size:12px}
-    .admin-table th{border-bottom:2px solid rgba(255,255,255,.08);padding:10px;font-weight:600;
-      color:var(--text-muted);text-align:left;text-transform:uppercase;font-size:10px;letter-spacing:.5px}
-    .admin-table td{border-bottom:1px solid rgba(255,255,255,.04);padding:8px 10px;vertical-align:middle}
-    .admin-table tr:hover td{background:rgba(255,255,255,.015)}
-    .admin-table input,.admin-table select{padding:6px 10px;font-size:12px;border-radius:7px}
-    /* â”€â”€ Auth Gate â”€â”€ */
-    .auth-overlay{position:fixed;top:0;left:0;width:100vw;height:100vh;
-      background:rgba(3,7,18,.9);backdrop-filter:blur(16px);z-index:10000;
-      display:flex;justify-content:center;align-items:center}
-    .auth-card{background:rgba(10,16,32,.75);border:1px solid var(--glass-border);
-      border-radius:22px;padding:38px;width:400px;box-shadow:0 20px 40px rgba(0,0,0,.6);
-      text-align:center;animation:pop .3s cubic-bezier(.1,.8,.25,1)}
-    .auth-card .auth-icon{font-size:46px;margin-bottom:14px;display:block}
-    .auth-card h2{margin-bottom:7px;font-weight:700;font-size:21px}
-    .auth-card p{font-size:13px;color:var(--text-muted);margin-bottom:22px;line-height:1.5}
-    .auth-error{color:#f87171;font-size:13px;margin-top:9px;display:none;animation:fadeIn .2s}
-    /* â”€â”€ Visual Timetable Grid â”€â”€ */
-    .tt-grid-wrap{overflow-x:auto;border-radius:10px;border:1px solid rgba(255,255,255,.1)}
-    .tt-grid{border-collapse:collapse;min-width:900px;width:100%;background:#fff;border-radius:10px}
-    .tt-grid th{background:#2d3a6b;color:#fff;padding:9px 10px;font-size:11.5px;
-      font-weight:700;text-align:center;border:1px solid #4a5568;white-space:nowrap}
-    .tt-grid td.day-cell{background:#fce4ec;color:#880e4f;font-weight:700;font-size:12px;
-      padding:8px 10px;text-align:center;border:1px solid #e0b0c0;white-space:nowrap;min-width:60px}
-    .tt-grid td.slot-cell{border:1px solid #ddd;padding:4px;min-width:110px;
-      vertical-align:middle;cursor:pointer;transition:background .15s;position:relative}
-    .tt-grid td.slot-cell:hover{background:rgba(99,102,241,.08)!important}
-    .tt-grid td.slot-cell.empty-cell{background:#fafafa}
-    .slot-inner{border-radius:6px;padding:5px 7px;font-size:11px;font-weight:600;
-      text-align:center;line-height:1.3;min-height:38px;display:flex;flex-direction:column;
-      justify-content:center;align-items:center;cursor:pointer}
-    .slot-inner .subj-name{font-size:11.5px;font-weight:700}
-    .slot-inner .fac-name{font-size:10px;opacity:.75;margin-top:2px}
-    .slot-inner.empty-slot{background:transparent;color:#bbb;font-size:11px}
-    .slot-inner.lunch-slot{background:#f5f5f5;color:#888;font-weight:700;
-      font-size:13px;letter-spacing:1px}
-    /* Cell edit modal */
-    .cell-modal-overlay{position:fixed;top:0;left:0;width:100vw;height:100vh;
-      background:rgba(0,0,0,.7);backdrop-filter:blur(8px);z-index:9000;
-      display:none;justify-content:center;align-items:center}
-    .cell-modal-overlay.open{display:flex}
-    .cell-modal{background:#0f172a;border:1px solid rgba(255,255,255,.12);border-radius:18px;
-      padding:28px;width:480px;max-width:95vw;animation:pop .25s ease}
-    .cell-modal h3{font-size:16px;font-weight:700;margin-bottom:18px;color:#e2e8f0}
-    .cell-modal .modal-info{font-size:12px;color:var(--text-muted);margin-bottom:16px;
-      background:rgba(255,255,255,.04);padding:8px 12px;border-radius:8px}
-    .subject-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;
-      max-height:260px;overflow-y:auto;margin-bottom:16px}
-    .subject-grid::-webkit-scrollbar{width:4px}
-    .subject-grid::-webkit-scrollbar-thumb{background:rgba(255,255,255,.1);border-radius:2px}
-    .subj-chip{padding:8px 10px;border-radius:9px;font-size:11.5px;font-weight:600;
-      cursor:pointer;text-align:center;border:2px solid transparent;transition:all .15s;
-      line-height:1.3}
-    .subj-chip:hover{transform:scale(1.04)}
-    .subj-chip.selected{border-color:#6366f1;box-shadow:0 0 0 3px rgba(99,102,241,.3)}
-    .faculty-chips{display:flex;flex-wrap:wrap;gap:7px;margin-bottom:16px;
-      max-height:120px;overflow-y:auto}
-    .fac-chip{padding:5px 11px;border-radius:20px;font-size:11.5px;font-weight:600;
-      cursor:pointer;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);
-      color:#cbd5e1;transition:all .15s}
-    .fac-chip:hover{background:rgba(99,102,241,.15)}
-    .fac-chip.selected{background:rgba(99,102,241,.25);border-color:#6366f1;color:#a5b4fc}
-    .modal-actions{display:flex;justify-content:space-between;align-items:center;margin-top:6px}
-    /* Section tabs */
-    .section-tabs{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:18px}
-    .sec-tab{padding:7px 16px;border-radius:20px;font-size:12px;font-weight:600;
-      cursor:pointer;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);
-      color:#94a3b8;transition:all .2s}
-    .sec-tab:hover{background:rgba(99,102,241,.1)}
-    .sec-tab.active{background:rgba(99,102,241,.2);border-color:#6366f1;color:#a5b4fc}
-    /* Legend */
-    .tt-legend{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
-    .legend-chip{padding:4px 10px;border-radius:6px;font-size:11px;font-weight:600}
-    .grid-two-col {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 20px;
-    }
-    @media(max-width:1024px){
-      .admin-container{flex-direction:column;width:100vw;height:100vh;border-radius:0}
-      .sidebar{width:100%;min-width:auto;flex-direction:row;align-items:center;
-        height:auto;padding:10px 14px;gap:10px;overflow-x:auto}
-      .sidebar-header,.sidebar-stats{display:none}
-      .sidebar-footer{display:flex;flex-direction:row;gap:6px;flex-shrink:0}
-      .back-btn, .logout-btn{white-space:nowrap;padding:7px 12px;font-size:12px;margin:0}
-      .nav-tabs{flex-direction:row;gap:5px;flex-shrink:0}
-      .tab-btn{white-space:nowrap;padding:7px 12px;font-size:12px;border-left:none;
-        border-bottom:2px solid transparent}
-      .tab-btn:hover,.tab-btn.active{border-left-color:transparent;border-bottom-color:var(--primary)}
-      .tab-btn .badge{display:none}
-      .split-layout{grid-template-columns:1fr}
-      .items-list{height:180px}
-      .form-row{grid-template-columns:1fr}
-      .grid-two-col {
-        grid-template-columns: 1fr;
-      }
-      .flex-header {
-        flex-direction: column !important;
-        align-items: flex-start !important;
-        gap: 12px !important;
-      }
-      .flex-header div {
-        width: 100% !important;
-        justify-content: flex-start !important;
-        flex-wrap: wrap !important;
-        gap: 8px !important;
-      }
-    }
-    @media (max-width: 480px) {
-      .subject-grid {
-        grid-template-columns: repeat(2, 1fr) !important;
-      }
-    }
-  </style>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>NBKR Admin Panel</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Segoe UI',sans-serif;background:#0a0a14;color:#e8eaf6;height:100vh;display:flex;overflow:hidden}
+/* Sidebar */
+.sidebar{width:220px;min-width:220px;background:#111120;border-right:1px solid rgba(255,255,255,.07);
+  display:flex;flex-direction:column;height:100vh;overflow-y:auto}
+.sb-header{padding:18px 16px 12px;border-bottom:1px solid rgba(255,255,255,.07)}
+.sb-header h1{font-size:15px;font-weight:700;color:#a78bfa}
+.sb-header p{font-size:11px;color:#666;margin-top:2px}
+.sb-stats{display:grid;grid-template-columns:1fr 1fr;gap:6px;padding:12px}
+.sb-stat{background:rgba(255,255,255,.04);border-radius:8px;padding:8px;text-align:center}
+.sb-stat .v{font-size:18px;font-weight:700;color:#a78bfa}
+.sb-stat .l{font-size:9px;color:#666;text-transform:uppercase;letter-spacing:.04em}
+.sb-nav{padding:6px 8px;flex:1}
+.nav-btn{width:100%;text-align:left;background:none;border:none;color:#94a3b8;
+  padding:9px 12px;border-radius:8px;cursor:pointer;font-size:12.5px;font-family:inherit;
+  display:flex;align-items:center;gap:8px;margin-bottom:2px;transition:.15s;border-left:3px solid transparent}
+.nav-btn:hover{background:rgba(167,139,250,.08);color:#e8eaf6}
+.nav-btn.active{background:rgba(167,139,250,.12);color:#a78bfa;border-left-color:#a78bfa}
+.nav-btn .cnt{margin-left:auto;background:rgba(167,139,250,.2);color:#a78bfa;
+  font-size:10px;font-weight:700;padding:1px 6px;border-radius:8px}
+.sb-footer{padding:10px 12px;border-top:1px solid rgba(255,255,255,.07);display:flex;flex-direction:column;gap:6px}
+.sb-footer a,.sb-footer button{text-align:center;padding:7px;border-radius:8px;
+  font-size:12px;font-weight:600;cursor:pointer;text-decoration:none;font-family:inherit}
+.sb-footer a{background:rgba(167,139,250,.08);color:#a78bfa;border:1px solid rgba(167,139,250,.2)}
+.sb-footer button{background:rgba(239,68,68,.08);color:#f87171;border:1px solid rgba(239,68,68,.2)}
+/* Main */
+.main{flex:1;display:flex;flex-direction:column;overflow:hidden}
+.topbar{padding:12px 22px;background:#111120;border-bottom:1px solid rgba(255,255,255,.07);
+  display:flex;align-items:center;justify-content:space-between}
+.topbar h2{font-size:16px;font-weight:700}
+.toast{font-size:12px;font-weight:600;padding:5px 14px;border-radius:16px;display:none}
+.toast.ok{display:block;background:rgba(16,185,129,.15);color:#34d399;border:1px solid rgba(16,185,129,.3)}
+.toast.err{display:block;background:rgba(239,68,68,.15);color:#f87171;border:1px solid rgba(239,68,68,.3)}
+.panel{flex:1;overflow-y:auto;padding:20px 22px;display:none}
+.panel.active{display:block}
+/* Cards */
+.card{background:#16162a;border:1px solid rgba(255,255,255,.07);border-radius:12px;margin-bottom:18px;overflow:hidden}
+.card-header{padding:12px 16px;background:rgba(255,255,255,.03);border-bottom:1px solid rgba(255,255,255,.06);
+  display:flex;align-items:center;justify-content:space-between}
+.card-header h3{font-size:13.5px;font-weight:600;color:#c7d2fe}
+.card-body{padding:16px}
+/* Table */
+.tbl{width:100%;border-collapse:collapse;font-size:12.5px}
+.tbl th{padding:9px 11px;text-align:left;font-size:10.5px;text-transform:uppercase;
+  letter-spacing:.04em;color:#666;border-bottom:1px solid rgba(255,255,255,.06);background:#0f0f1e}
+.tbl td{padding:8px 11px;border-bottom:1px solid rgba(255,255,255,.04);color:#c7d2fe;vertical-align:middle}
+.tbl tr:hover td{background:rgba(167,139,250,.04)}
+/* Buttons */
+.btn{padding:8px 16px;border-radius:8px;cursor:pointer;font-size:12.5px;font-weight:600;
+  border:none;transition:.15s;font-family:inherit}
+.btn-p{background:#7c3aed;color:#fff}.btn-p:hover{background:#6d28d9}
+.btn-g{background:#059669;color:#fff}.btn-g:hover{background:#047857}
+.btn-r{background:rgba(239,68,68,.15);color:#f87171;border:1px solid rgba(239,68,68,.2)}.btn-r:hover{background:rgba(239,68,68,.25)}
+.btn-s{background:rgba(255,255,255,.07);color:#94a3b8;border:1px solid rgba(255,255,255,.1)}.btn-s:hover{background:rgba(255,255,255,.12)}
+.btn-sm{padding:4px 10px;font-size:11.5px}
+/* Form */
+.fr{display:flex;flex-wrap:wrap;gap:10px;margin-bottom:10px}
+.fg{flex:1;min-width:160px}
+.fg label{display:block;font-size:10.5px;color:#666;text-transform:uppercase;letter-spacing:.04em;margin-bottom:4px;font-weight:600}
+.fg input,.fg select,.fg textarea{width:100%;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);
+  border-radius:8px;padding:8px 11px;color:#e8eaf6;font-size:13px;font-family:inherit;outline:none}
+.fg input:focus,.fg select:focus,.fg textarea:focus{border-color:#7c3aed;background:rgba(124,58,237,.08)}
+.fg select option{background:#16162a}
+.fg textarea{resize:vertical;min-height:70px}
+/* Search */
+.search-bar{background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);
+  border-radius:8px;padding:8px 12px;color:#e8eaf6;font-size:13px;width:240px;outline:none}
+.search-bar:focus{border-color:#7c3aed}
+/* Modal */
+.modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.75);backdrop-filter:blur(6px);
+  z-index:999;display:none;align-items:center;justify-content:center}
+.modal-bg.open{display:flex}
+.modal{background:#16162a;border:1px solid rgba(255,255,255,.1);border-radius:14px;
+  padding:24px;width:520px;max-width:95vw;max-height:90vh;overflow-y:auto}
+.modal h3{font-size:15px;font-weight:700;margin-bottom:18px}
+</style>
 </head>
 <body>
 
-<!-- Auth Gate removed - auto-login via URL param or localStorage -->
+<!-- SIDEBAR -->
+<div class="sidebar">
+  <div class="sb-header"><h1>⚙️ NBKR Admin</h1><p>Department Control Panel</p></div>
+  <div class="sb-stats">
+    <div class="sb-stat"><div class="v" id="ss-fac">-</div><div class="l">Faculty</div></div>
+    <div class="sb-stat"><div class="v" id="ss-stu">-</div><div class="l">Students</div></div>
+    <div class="sb-stat"><div class="v" id="ss-bus">-</div><div class="l">Bus Routes</div></div>
+    <div class="sb-stat"><div class="v" id="ss-ntc">-</div><div class="l">Notices</div></div>
+  </div>
+  <div class="sb-nav">
+    <button class="nav-btn active" onclick="go('faculty','👥 Faculty Management')">👥 Faculty <span class="cnt" id="c-fac">0</span></button>
+    <button class="nav-btn" onclick="go('busfees','🚌 Bus Fee Management')">🚌 Bus Fees <span class="cnt" id="c-bus">0</span></button>
+    <button class="nav-btn" onclick="go('students','🎓 Students')">🎓 Students <span class="cnt" id="c-stu">0</span></button>
+    <button class="nav-btn" onclick="go('curriculum','📖 Curriculum')">📖 Curriculum</button>
+    <button class="nav-btn" onclick="go('subjects','📚 Subjects')">📚 Subjects <span class="cnt" id="c-sub">0</span></button>
+    <button class="nav-btn" onclick="go('notices','📢 Notices')">📢 Notices <span class="cnt" id="c-ntc">0</span></button>
+    <button class="nav-btn" onclick="go('placements','🏢 Placements')">🏢 Placements <span class="cnt" id="c-plc">0</span></button>
+    <button class="nav-btn" onclick="go('events','🎉 Events')">🎉 Events <span class="cnt" id="c-evt">0</span></button>
+    <button class="nav-btn" onclick="go('knowledge','💡 Knowledge Base')">💡 Knowledge Base <span class="cnt" id="c-kb">0</span></button>
+    <button class="nav-btn" onclick="go('deptinfo','🏛️ Dept Info')">🏛️ Dept Info</button>
+    <button class="nav-btn" onclick="go('audit','🔍 Audit Log')">🔍 Audit Log</button>
+  </div>
+  <div class="sb-footer">
+    <a href="/">← Back to Chatbot</a>
+    <button onclick="localStorage.removeItem('nbkr_admin_pwd');location.reload()">Log Out</button>
+  </div>
+</div>
 
+<!-- MAIN -->
+<div class="main">
+  <div class="topbar">
+    <h2 id="page-title">👥 Faculty Management</h2>
+    <span class="toast" id="toast"></span>
+  </div>
 
-<!-- Cell Edit Modal -->
-<div class="cell-modal-overlay" id="cell-modal-overlay">
-  <div class="cell-modal">
-    <h3>✍️ Edit Time Slot</h3>
-    <div class="modal-info" id="modal-info">Monday · 9-10</div>
-    <input type="hidden" id="modal-section"/>
-    <input type="hidden" id="modal-day"/>
-    <input type="hidden" id="modal-slot"/>
-
-    <div class="modal-span-row"></div>
-
-    <label style="margin-bottom:8px;display:block">Select Subject</label>
-    <div class="subject-grid" id="subject-grid"></div>
-
-    <label class="modal-fac-label" style="margin-bottom:8px;display:block">Select Faculty (multi-select)</label>
-    <div class="faculty-chips" id="faculty-chips"></div>
-
-    <div class="modal-actions">
-      <button class="btn-danger" onclick="clearCell()">🗑️ Clear Cell</button>
-      <div style="display:flex;gap:10px">
-        <button class="btn-secondary" onclick="closeCellModal()">Cancel</button>
-        <button class="btn-primary" onclick="applyCell()">✓ Apply</button>
+  <!-- FACULTY -->
+  <div class="panel active" id="panel-faculty">
+    <div class="card">
+      <div class="card-header">
+        <h3>➕ Add / Edit Faculty</h3>
+        <input class="search-bar" placeholder="🔍 Search faculty…" oninput="filterTable('fac-tbody',this.value)">
       </div>
+      <div class="card-body">
+        <div class="fr">
+          <div class="fg"><label>Name *</label><input id="fac-name" placeholder="Dr. Example"></div>
+          <div class="fg"><label>Designation *</label>
+            <select id="fac-desig"><option>Head of the Department</option><option>Professor</option>
+              <option>Associate Professor</option><option selected>Assistant Professor</option></select></div>
+          <div class="fg"><label>Qualification</label><input id="fac-qual" placeholder="B.Tech, M.Tech, Ph.D"></div>
+        </div>
+        <div class="fr">
+          <div class="fg"><label>Date of Joining</label><input id="fac-doj" type="date"></div>
+          <div class="fg"><label>Phone *</label><input id="fac-phone" placeholder="9999999999"></div>
+          <div class="fg"><label>Email *</label><input id="fac-email" placeholder="name@nbkrist.org"></div>
+          <div class="fg"><label>Specialization</label><input id="fac-spec" placeholder="Machine Learning"></div>
+        </div>
+        <div class="fr">
+          <div class="fg" style="min-width:100%"><label>Experience</label><input id="fac-exp" placeholder="e.g. 10 years in AI research"></div>
+        </div>
+        <input type="hidden" id="fac-edit-idx" value="-1">
+        <div style="display:flex;gap:8px">
+          <button class="btn btn-g" onclick="saveFaculty()">💾 Save Faculty</button>
+          <button class="btn btn-s" onclick="clearFacForm()">✖ Clear</button>
+        </div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-header"><h3>👥 Faculty List</h3><span id="fac-count" style="font-size:11px;color:#666"></span></div>
+      <div style="overflow-x:auto">
+        <table class="tbl"><thead><tr>
+          <th>#</th><th>Name</th><th>Designation</th><th>Phone</th><th>Email</th><th>Qualification</th><th>Actions</th>
+        </tr></thead><tbody id="fac-tbody"></tbody></table>
+      </div>
+    </div>
+  </div>
+
+  <!-- BUS FEES -->
+  <div class="panel" id="panel-busfees">
+    <div class="card">
+      <div class="card-header">
+        <h3>🚌 Bus Route Manager</h3>
+        <div style="display:flex;gap:8px;align-items:center">
+          <input class="search-bar" placeholder="🔍 Search stop name…" oninput="filterBusStop(this.value)">
+          <button class="btn btn-g btn-sm" onclick="openBusModal()">➕ Add Route</button>
+          <button class="btn btn-p btn-sm" onclick="saveBusFees()">💾 Save All</button>
+        </div>
+      </div>
+      <div class="card-body">
+        <div class="fr">
+          <div class="fg" style="max-width:200px"><label>Academic Year</label>
+            <input id="bus-year" placeholder="2026-27"></div>
+        </div>
+        <div id="bus-routes-container"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- STUDENTS -->
+  <div class="panel" id="panel-students">
+    <div class="card">
+      <div class="card-header">
+        <h3>➕ Add Student</h3>
+        <input class="search-bar" placeholder="🔍 Search roll/name…" oninput="filterTable('stu-tbody',this.value)">
+      </div>
+      <div class="card-body">
+        <div class="fr">
+          <div class="fg"><label>Roll No *</label><input id="stu-roll" placeholder="23KB1A3001"></div>
+          <div class="fg"><label>Name *</label><input id="stu-name" placeholder="Student name"></div>
+          <div class="fg"><label>Phone</label><input id="stu-phone"></div>
+          <div class="fg"><label>Email</label><input id="stu-email"></div>
+        </div>
+        <div class="fr">
+          <div class="fg"><label>Branch</label><select id="stu-branch"><option>AI&DS</option><option>IT</option></select></div>
+          <div class="fg"><label>Section</label><select id="stu-sec"><option>A</option><option>B</option><option>C</option><option>D</option><option>-</option></select></div>
+          <div class="fg"><label>CGPA</label><input id="stu-cgpa" type="number" step="0.01" min="0" max="10"></div>
+          <div class="fg"><label>School</label><input id="stu-school"></div>
+        </div>
+        <button class="btn btn-g" onclick="addStudent()">➕ Add Student</button>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-header"><h3>🎓 Students</h3><span id="stu-count" style="font-size:11px;color:#666"></span></div>
+      <div style="overflow-x:auto">
+        <table class="tbl"><thead><tr>
+          <th>#</th><th>Roll No</th><th>Name</th><th>Phone</th><th>Email</th><th>Branch</th><th>Sec</th><th>CGPA</th><th>Del</th>
+        </tr></thead><tbody id="stu-tbody"></tbody></table>
+      </div>
+    </div>
+  </div>
+
+  <!-- CURRICULUM -->
+  <div class="panel" id="panel-curriculum">
+    <div class="card">
+      <div class="card-header"><h3>➕ Add Course</h3></div>
+      <div class="card-body">
+        <div class="fr">
+          <div class="fg"><label>Semester *</label><select id="cur-sem"></select></div>
+          <div class="fg"><label>Section</label>
+            <select id="cur-sec"><option>Electives</option><option>Skill Courses</option>
+              <option>Non-Electives</option><option>Professional Electives I</option>
+              <option>Professional Electives II</option><option>Professional Electives IV</option>
+              <option>Management Course II</option></select></div>
+          <div class="fg"><label>Course Name *</label><input id="cur-course" placeholder="Machine Learning (23AD31T2)"></div>
+          <div class="fg"><label>Lab</label><input id="cur-lab" placeholder="ML Lab or None"></div>
+        </div>
+        <div style="display:flex;gap:8px">
+          <button class="btn btn-g" onclick="addCurriculumCourse()">➕ Add Course</button>
+        </div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-header"><h3>🗑️ Delete Course</h3></div>
+      <div class="card-body">
+        <div class="fr">
+          <div class="fg"><label>Semester</label><select id="del-cur-sem"></select></div>
+          <div class="fg"><label>Section</label>
+            <select id="del-cur-sec"><option>Electives</option><option>Skill Courses</option>
+              <option>Non-Electives</option><option>Professional Electives I</option>
+              <option>Professional Electives II</option><option>Professional Electives IV</option>
+              <option>Management Course II</option></select></div>
+          <div class="fg"><label>Course (partial)</label><input id="del-cur-course" placeholder="Machine Learning"></div>
+          <div class="fg" style="display:flex;align-items:flex-end">
+            <button class="btn btn-r" onclick="deleteCurriculumCourse()">🗑️ Delete</button></div>
+        </div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-header"><h3>📖 Curriculum View</h3></div>
+      <div class="card-body" id="cur-view"></div>
+    </div>
+  </div>
+
+  <!-- SUBJECTS -->
+  <div class="panel" id="panel-subjects">
+    <div class="card">
+      <div class="card-header">
+        <h3>➕ Add Subject</h3>
+        <input class="search-bar" placeholder="🔍 Search…" oninput="filterTable('sub-tbody',this.value)">
+      </div>
+      <div class="card-body">
+        <div class="fr">
+          <div class="fg"><label>Subject Name *</label><input id="sub-name" placeholder="Machine Learning"></div>
+          <div class="fg"><label>Subject Code *</label><input id="sub-code" placeholder="23AD31T2"></div>
+          <div class="fg"><label>Credits</label><input id="sub-credits" type="number" min="0" max="6" placeholder="3"></div>
+          <div class="fg"><label>Semester</label><input id="sub-sem" placeholder="III Year - Sem I"></div>
+          <div class="fg"><label>Faculty</label><input id="sub-faculty" placeholder="Dr. Mamatha"></div>
+        </div>
+        <input type="hidden" id="sub-edit-id" value="">
+        <div style="display:flex;gap:8px">
+          <button class="btn btn-g" onclick="saveSubject()">💾 Save Subject</button>
+          <button class="btn btn-s" onclick="clearSubForm()">✖ Clear</button>
+        </div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-header"><h3>📚 Subjects List</h3></div>
+      <div style="overflow-x:auto">
+        <table class="tbl"><thead><tr>
+          <th>#</th><th>Name</th><th>Code</th><th>Credits</th><th>Semester</th><th>Faculty</th><th>Actions</th>
+        </tr></thead><tbody id="sub-tbody"></tbody></table>
+      </div>
+    </div>
+  </div>
+
+  <!-- NOTICES -->
+  <div class="panel" id="panel-notices">
+    <div class="card">
+      <div class="card-header"><h3>➕ Add Notice</h3></div>
+      <div class="card-body">
+        <div class="fr">
+          <div class="fg"><label>Title *</label><input id="ntc-title" placeholder="Fee Notice"></div>
+          <div class="fg"><label>Date</label><input id="ntc-date" type="date"></div>
+          <div class="fg"><label>Category</label>
+            <select id="ntc-cat"><option>general</option><option>fee</option><option>exam</option>
+              <option>circular</option><option>event</option></select></div>
+          <div class="fg"><label>Applicable To</label><input id="ntc-app" placeholder="All Students"></div>
+        </div>
+        <div class="fr">
+          <div class="fg" style="min-width:100%"><label>Content *</label>
+            <textarea id="ntc-content" style="min-height:80px" placeholder="Notice content…"></textarea></div>
+        </div>
+        <input type="hidden" id="ntc-edit-id" value="">
+        <div style="display:flex;gap:8px">
+          <button class="btn btn-g" onclick="saveNotice()">💾 Save Notice</button>
+          <button class="btn btn-s" onclick="clearNtcForm()">✖ Clear</button>
+        </div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-header"><h3>📢 Notices</h3><span id="ntc-count" style="font-size:11px;color:#666"></span></div>
+      <div style="overflow-x:auto">
+        <table class="tbl"><thead><tr>
+          <th>#</th><th>ID</th><th>Date</th><th>Title</th><th>Category</th><th>Actions</th>
+        </tr></thead><tbody id="ntc-tbody"></tbody></table>
+      </div>
+    </div>
+  </div>
+
+  <!-- PLACEMENTS -->
+  <div class="panel" id="panel-placements">
+    <div class="card">
+      <div class="card-header"><h3>➕ Add Placement Record</h3></div>
+      <div class="card-body">
+        <div class="fr">
+          <div class="fg"><label>Company Name *</label><input id="plc-company" placeholder="TCS"></div>
+          <div class="fg"><label>Package (LPA)</label><input id="plc-package" placeholder="6 LPA"></div>
+          <div class="fg"><label>Eligibility</label><input id="plc-eligibility" placeholder="CGPA ≥ 7.0"></div>
+          <div class="fg"><label>Registration Link</label><input id="plc-link" placeholder="https://..."></div>
+          <div class="fg"><label>Drive Date</label><input id="plc-date" type="date"></div>
+        </div>
+        <input type="hidden" id="plc-edit-id" value="">
+        <div style="display:flex;gap:8px">
+          <button class="btn btn-g" onclick="savePlacement()">💾 Save</button>
+          <button class="btn btn-s" onclick="clearPlcForm()">✖ Clear</button>
+        </div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-header"><h3>🏢 Placement Records</h3><span id="plc-count" style="font-size:11px;color:#666"></span></div>
+      <div style="overflow-x:auto">
+        <table class="tbl"><thead><tr>
+          <th>#</th><th>Company</th><th>Package</th><th>Eligibility</th><th>Date</th><th>Actions</th>
+        </tr></thead><tbody id="plc-tbody"></tbody></table>
+      </div>
+    </div>
+  </div>
+
+  <!-- EVENTS -->
+  <div class="panel" id="panel-events">
+    <div class="card">
+      <div class="card-header"><h3>➕ Add Event</h3></div>
+      <div class="card-body">
+        <div class="fr">
+          <div class="fg"><label>Event Name *</label><input id="evt-name" placeholder="Hackathon 2026"></div>
+          <div class="fg"><label>Date</label><input id="evt-date" type="date"></div>
+          <div class="fg"><label>Venue</label><input id="evt-venue" placeholder="Main Auditorium"></div>
+        </div>
+        <div class="fr">
+          <div class="fg" style="min-width:100%"><label>Description</label>
+            <textarea id="evt-desc" style="min-height:70px" placeholder="Event details…"></textarea></div>
+        </div>
+        <input type="hidden" id="evt-edit-id" value="">
+        <div style="display:flex;gap:8px">
+          <button class="btn btn-g" onclick="saveEvent()">💾 Save Event</button>
+          <button class="btn btn-s" onclick="clearEvtForm()">✖ Clear</button>
+        </div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-header"><h3>🎉 Events</h3><span id="evt-count" style="font-size:11px;color:#666"></span></div>
+      <div style="overflow-x:auto">
+        <table class="tbl"><thead><tr>
+          <th>#</th><th>Event</th><th>Date</th><th>Venue</th><th>Description</th><th>Actions</th>
+        </tr></thead><tbody id="evt-tbody"></tbody></table>
+      </div>
+    </div>
+  </div>
+
+  <!-- KNOWLEDGE BASE -->
+  <div class="panel" id="panel-knowledge">
+    <div class="card">
+      <div class="card-header"><h3>➕ Add Knowledge Entry</h3></div>
+      <div class="card-body">
+        <div class="fr">
+          <div class="fg"><label>Title *</label><input id="kb-title" placeholder="Exam Schedule"></div>
+          <div class="fg"><label>Category</label>
+            <select id="kb-cat"><option>general</option><option>circular</option>
+              <option>faq</option><option>announcement</option></select></div>
+        </div>
+        <div class="fr">
+          <div class="fg" style="min-width:100%"><label>Content *</label>
+            <textarea id="kb-content" style="min-height:80px" placeholder="Knowledge content…"></textarea></div>
+        </div>
+        <input type="hidden" id="kb-edit-id" value="">
+        <div style="display:flex;gap:8px">
+          <button class="btn btn-g" onclick="saveKB()">💾 Save Entry</button>
+          <button class="btn btn-s" onclick="clearKBForm()">✖ Clear</button>
+        </div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-header"><h3>💡 Knowledge Base</h3><span id="kb-count" style="font-size:11px;color:#666"></span></div>
+      <div style="overflow-x:auto">
+        <table class="tbl"><thead><tr>
+          <th>#</th><th>Title</th><th>Category</th><th>Content</th><th>Actions</th>
+        </tr></thead><tbody id="kb-tbody"></tbody></table>
+      </div>
+    </div>
+  </div>
+
+  <!-- DEPT INFO -->
+  <div class="panel" id="panel-deptinfo">
+    <div class="card">
+      <div class="card-header"><h3>🏛️ Department Information</h3>
+        <button class="btn btn-g btn-sm" onclick="saveDeptInfo()">💾 Save All</button></div>
+      <div class="card-body">
+        <div class="fr">
+          <div class="fg" style="min-width:100%"><label>Vision</label>
+            <textarea id="di-vision" style="min-height:70px"></textarea></div>
+        </div>
+        <div class="fr">
+          <div class="fg" style="min-width:100%"><label>Mission</label>
+            <textarea id="di-mission" style="min-height:70px"></textarea></div>
+        </div>
+        <div class="fr">
+          <div class="fg" style="min-width:100%"><label>PEOs (one per line)</label>
+            <textarea id="di-peos" style="min-height:80px"></textarea></div>
+        </div>
+        <div class="fr">
+          <div class="fg" style="min-width:100%"><label>PSOs (one per line)</label>
+            <textarea id="di-psos" style="min-height:70px"></textarea></div>
+        </div>
+        <div class="fr">
+          <div class="fg" style="min-width:100%"><label>HOD Message</label>
+            <textarea id="di-hod" style="min-height:80px"></textarea></div>
+        </div>
+        <div class="fr">
+          <div class="fg" style="min-width:100%"><label>About Department</label>
+            <textarea id="di-about" style="min-height:80px"></textarea></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- AUDIT LOG -->
+  <div class="panel" id="panel-audit">
+    <div class="card">
+      <div class="card-header"><h3>🔍 Audit Log</h3>
+        <button class="btn btn-s btn-sm" onclick="loadAudit()">🔄 Refresh</button></div>
+      <div style="overflow-x:auto">
+        <table class="tbl"><thead><tr><th>Timestamp</th><th>Action</th></tr></thead>
+        <tbody id="audit-tbody"></tbody></table>
+      </div>
+    </div>
+  </div>
+
+</div><!-- main -->
+
+<!-- Bus Route Modal -->
+<div class="modal-bg" id="bus-modal">
+  <div class="modal">
+    <h3 id="bus-modal-title">➕ Add Bus Route</h3>
+    <div class="fr">
+      <div class="fg"><label>Route Name *</label><input id="bm-route" placeholder="NELLORE_KOVUR"></div>
+      <div class="fg"><label>Stop Name *</label><input id="bm-stop" placeholder="Nellore"></div>
+      <div class="fg"><label>Fee (₹) *</label><input id="bm-fee" type="number" placeholder="28000"></div>
+    </div>
+    <input type="hidden" id="bm-edit-route" value="">
+    <input type="hidden" id="bm-edit-idx" value="-1">
+    <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:12px">
+      <button class="btn btn-s" onclick="closeBusModal()">Cancel</button>
+      <button class="btn btn-g" onclick="saveBusStop()">💾 Save Stop</button>
     </div>
   </div>
 </div>
 
-<div class="admin-container">
-  <!-- Sidebar -->
-  <div class="sidebar">
-    <div class="sidebar-header">
-      <span style="font-size:26px">⚙️</span>
-      <div><h2>NBKR Admin</h2><p>Control Console</p></div>
-    </div>
-    <div class="sidebar-stats">
-      <div class="stat-chip"><div class="stat-val" id="stat-sections">-</div><div class="stat-label">Sections</div></div>
-      <div class="stat-chip"><div class="stat-val" id="stat-faculty">-</div><div class="stat-label">Faculty</div></div>
-      <div class="stat-chip"><div class="stat-val" id="stat-circulars">-</div><div class="stat-label">Notices</div></div>
-      <div class="stat-chip"><div class="stat-val" id="stat-faq">-</div><div class="stat-label">FAQ</div></div>
-    </div>
-    <div class="nav-tabs">
-      <button class="tab-btn active" onclick="switchTab('tab-timetables')">📅 <span>Timetables</span> <span class="badge" id="badge-tt">0</span></button>
-      <button class="tab-btn" onclick="switchTab('tab-circulars')">📢 <span>Circulars</span> <span class="badge" id="badge-circ">0</span></button>
-      <button class="tab-btn" onclick="switchTab('tab-faculty')">👤 <span>Faculty</span> <span class="badge" id="badge-fac">0</span></button>
-      <button class="tab-btn" onclick="switchTab('tab-knowledge')">💡 <span>FAQ / QA</span> <span class="badge" id="badge-kb">0</span></button>
-    </div>
-    <div class="sidebar-footer">
-      <a href="/" class="back-btn">← Back to Chatbot</a>
-      <button class="logout-btn" onclick="logoutAdmin()">Log Out</button>
-    </div>
-  </div>
-
-  <!-- Content -->
-  <div class="content-pane">
-    <div class="header-bar">
-      <h1 id="tab-title">📅 Visual Timetable Editor</h1>
-      <div class="save-status" id="save-status-toast">✓ Saved!</div>
-    </div>
-    <div class="editor-body">
-
-      <!-- TIMETABLES TAB -->
-      <div class="tab-panel active" id="tab-timetables">
-        <div class="editor-section">
-          <div class="flex-header">
-            <h3>📅 Select Class Section</h3>
-            <div style="display:flex;gap:8px;align-items:center">
-              <button class="btn-secondary" onclick="addNewSection()">➕ New Section</button>
-              <button class="btn-danger" onclick="deleteCurrentSection()">🗑️ Delete Section</button>
-              <button class="btn-primary" id="btn-save-tt" onclick="saveTimetableData()">💾 Save All</button>
-            </div>
-          </div>
-          <div class="section-tabs" id="section-tabs"></div>
-          <!-- Visual timetable grid renders here -->
-          <div id="tt-grid-container"></div>
-          <!-- Legend -->
-          <div class="tt-legend" id="tt-legend"></div>
-        </div>
-
-        <!-- Subject & Faculty maps -->
-        <div class="grid-two-col">
-          <div class="editor-section">
-            <div class="flex-header"><h3>📚 Subject Codes</h3></div>
-            <table class="admin-table">
-              <thead><tr><th style="width:110px">Code</th><th>Full Name</th><th style="width:55px">Del</th></tr></thead>
-              <tbody id="subjects-tbody"></tbody>
-            </table>
-            <button class="btn-secondary" onclick="addSubjectRow()">➕ Add Subject</button>
-          </div>
-          <div class="editor-section">
-            <div class="flex-header"><h3>👤 Faculty Initials</h3></div>
-            <table class="admin-table">
-              <thead><tr><th style="width:110px">Initials</th><th>Full Name</th><th style="width:55px">Del</th></tr></thead>
-              <tbody id="faculty-map-tbody"></tbody>
-            </table>
-            <button class="btn-secondary" onclick="addFacultyMapRow()">➕ Add Initials</button>
-          </div>
-        </div>
-      </div>
-
-      <!-- CIRCULARS TAB -->
-      <div class="tab-panel" id="tab-circulars">
-        <div class="split-layout">
-          <div>
-            <div class="flex-header"><h3>📢 Notices</h3></div>
-            <div class="items-list" id="circulars-list"></div>
-            <button class="btn-secondary" onclick="addNewCircularForm()" style="width:100%;margin-top:10px">➕ Add Notice</button>
-          </div>
-          <div class="form-pane" id="circular-form-pane">
-            <h3 id="circular-form-title">Edit Circular Notice</h3>
-            <input type="hidden" id="circ-index"/>
-            <div class="form-row">
-              <div class="form-group"><label>Notice ID</label><input type="text" id="circ-id" placeholder="e.g. B-10/2026/01"/></div>
-              <div class="form-group"><label>Date</label><input type="text" id="circ-date" placeholder="e.g. 2026-05-25"/></div>
-            </div>
-            <div class="form-group"><label>Notice Title</label><input type="text" id="circ-title" placeholder="e.g. Tuition Fee Notification"/></div>
-            <div class="form-group"><label>Notice Content</label><textarea id="circ-content" placeholder="Full notice description..."></textarea></div>
-            <div class="form-row">
-              <div class="form-group"><label>Applicable To</label><input type="text" id="circ-applic" placeholder="e.g. 1st and 2nd Year Students"/></div>
-              <div class="form-group"><label>Payment Portal URL</label><input type="text" id="circ-portal" placeholder="e.g. http://nbkriffee.org"/></div>
-            </div>
-            <h4 style="font-size:12px;color:var(--text-muted);border-bottom:1px solid rgba(255,255,255,.06);padding-bottom:5px">Key Dates (Optional)</h4>
-            <div class="form-row">
-              <div class="form-group"><label>Class Commencement</label><input type="text" id="circ-kd-commence" placeholder="e.g. 2026-06-01"/></div>
-              <div class="form-group"><label>Early Bird Deadline</label><input type="text" id="circ-kd-deadline" placeholder="e.g. 2026-05-30"/></div>
-            </div>
-            <div class="form-group" style="width:50%"><label>Early Bird Discount</label><input type="text" id="circ-kd-discount" placeholder="e.g. 10%"/></div>
-            <div style="display:flex;justify-content:space-between;margin-top:8px">
-              <button class="btn-danger" onclick="deleteCircular()">🗑️ Delete</button>
-              <button class="btn-primary" onclick="saveCircularRecord()">💾 Save Notice</button>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- FACULTY TAB -->
-      <div class="tab-panel" id="tab-faculty">
-        <div class="split-layout">
-          <div>
-            <div class="flex-header"><h3>👤 Faculty List</h3></div>
-            <div class="items-list" id="faculty-list"></div>
-            <button class="btn-secondary" onclick="addNewFacultyForm()" style="width:100%;margin-top:10px">➕ Add Faculty</button>
-          </div>
-          <div class="form-pane" id="faculty-form-pane">
-            <h3 id="faculty-form-title">Edit Faculty Member</h3>
-            <input type="hidden" id="fac-index"/>
-            <div class="form-group"><label>Full Name</label><input type="text" id="fac-name" placeholder="e.g. Dr. Ramesh Babu K"/></div>
-            <div class="form-row">
-              <div class="form-group"><label>Designation</label>
-                <select id="fac-designation">
-                  <option>Head of the Department</option><option>Professor</option>
-                  <option>Associate Professor</option><option>Assistant Professor</option>
-                </select>
-              </div>
-              <div class="form-group"><label>Specialization</label><input type="text" id="fac-specialization" placeholder="e.g. Machine Learning"/></div>
-            </div>
-            <div class="form-group"><label>Qualifications (comma-separated)</label><textarea id="fac-qualification" placeholder="e.g. M.Tech, Ph.D"></textarea></div>
-            <div style="display:flex;justify-content:space-between;margin-top:8px">
-              <button class="btn-danger" onclick="deleteFaculty()">🗑️ Delete</button>
-              <button class="btn-primary" onclick="saveFacultyRecord()">💾 Save Faculty</button>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- FAQ TAB -->
-      <div class="tab-panel" id="tab-knowledge">
-        <div class="editor-section">
-          <div class="flex-header">
-            <h3>💡 FAQ Knowledge Base</h3>
-            <button class="btn-secondary" onclick="addKnowledgeRow()">➕ Add QA Item</button>
-          </div>
-          <table class="admin-table">
-            <thead><tr><th style="width:300px">Question Key</th><th>Answer</th><th style="width:60px">Del</th></tr></thead>
-            <tbody id="knowledge-tbody"></tbody>
-          </table>
-        </div>
-        <div style="text-align:right">
-          <button class="btn-primary" onclick="saveKnowledgeData()">💾 Save FAQ Database</button>
-        </div>
-      </div>
-
-    </div><!-- editor-body -->
-  </div><!-- content-pane -->
-</div><!-- admin-container -->
-
 <script>
-// ── State ────────────────────────────────────────────────────────────────────
-let serverData = { timetable_data:{timetable:{},subjects:{},faculty:{}}, faculty_data:[], circular_data:[], knowledge_data:{} };
-let activeTab = 'tab-timetables';
-let currentSection = null;
-let adminPwd = '';
+const PWD = localStorage.getItem('nbkr_admin_pwd') || new URLSearchParams(location.search).get('pwd') || 'nbkr2026';
+const H = {'X-Admin-Password': PWD, 'Content-Type':'application/json'};
 
-const SUBJ_COLORS = {
-  LAC:'#cce5ff',EP:'#fff3cd',BEEE:'#f8d7da','CP LAB':'#d4edda',
-  'EP-LAB':'#ffeeba','EEE WS':'#e2d9f3','IT WS':'#d1ecf1',
-  NGCS:'#e2e3e5','ENGINEERING GRAPHICS':'#d6d8f7','INTRODUCTION TO PROGRAMMING':'#ffd8a8',
-  AI:'#cce5ff',IDS:'#e2d9f3',DL_CO:'#d4edda',BE:'#fff3cd',
-  SMDS:'#f8d7da','DTI LAB':'#ffd8a8','IDS LAB':'#d6d8f7',
-  'AI LAB':'#d1ecf1','FULL STACK DEVELOPMENT LAB':'#c3e6cb',
-  SNA:'#d4edda',BDA:'#fff3cd',AIF:'#cce5ff',NLP:'#e2d9f3',
-  DL:'#f8d7da',AWPS:'#ffeeba','TPW.IPR':'#c3e6cb',
-  'DL LAB':'#ffd8a8','BD and DV LAB':'#d1ecf1',
-  WORKSHOP:'#ffd8a8','SOFT SKILLS LAB':'#d4edda'
-};
-const SUBJ_TEXT = {
-  LAC:'#004085',EP:'#856404',BEEE:'#721c24','CP LAB':'#155724',
-  'EP-LAB':'#856404','EEE WS':'#432874','IT WS':'#0c5460',
-  NGCS:'#383d41','ENGINEERING GRAPHICS':'#2d2f8f','INTRODUCTION TO PROGRAMMING':'#7d3c00',
-  AI:'#004085',IDS:'#432874',DL_CO:'#155724',BE:'#856404',
-  SMDS:'#721c24','DTI LAB':'#7d3c00','IDS LAB':'#2d2f8f',
-  'AI LAB':'#0c5460','FULL STACK DEVELOPMENT LAB':'#155724',
-  SNA:'#155724',BDA:'#856404',AIF:'#004085',NLP:'#432874',
-  DL:'#721c24',AWPS:'#856404','TPW.IPR':'#155724',
-  'DL LAB':'#7d3c00','BD and DV LAB':'#0c5460',
-  WORKSHOP:'#7d3c00','SOFT SKILLS LAB':'#155724'
-};
-const DAYS = ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
-const ATOMIC_COLS = ['9-10','10-11','11-12','12-1','1-2','2-3','3-4','4-5'];
-const LUNCH_VALS = new Set(['L','U','N','C','H','BREAK','LUNCH']);
-
-// Get covered atomic slots dynamically from compound slot keys (e.g. "9-12" -> ["9-10", "10-11", "11-12"])
-function getCoveredSlots(slotKey) {
-  const HOUR_ORDER = ['9', '10', '11', '12', '1', '2', '3', '4', '5'];
-  const parts = slotKey.split('-');
-  if (parts.length !== 2) return [slotKey];
-  const start = parts[0].trim();
-  const end = parts[1].trim();
-  const startIndex = HOUR_ORDER.indexOf(start);
-  const endIndex = HOUR_ORDER.indexOf(end);
-  if (startIndex === -1 || endIndex === -1 || startIndex >= endIndex) {
-    return [slotKey];
-  }
-  const covered = [];
-  for (let i = startIndex; i < endIndex; i++) {
-    covered.push(`${HOUR_ORDER[i]}-${HOUR_ORDER[i+1]}`);
-  }
-  return covered;
+function toast(msg, err=false) {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.className = 'toast ' + (err ? 'err' : 'ok');
+  setTimeout(() => t.className = 'toast', 3500);
 }
 
-// Calculate the end time based on the starting atomic slot and duration span
-function getEndTime(startCol, span) {
-  const HOUR_ORDER = ['9', '10', '11', '12', '1', '2', '3', '4', '5'];
-  const start = startCol.split('-')[0];
-  const startIndex = HOUR_ORDER.indexOf(start);
-  if (startIndex === -1) return '';
-  const endIndex = startIndex + span;
-  if (endIndex >= HOUR_ORDER.length) return HOUR_ORDER[HOUR_ORDER.length - 1];
-  return HOUR_ORDER[endIndex];
+function api(url, method='GET', body=null) {
+  return fetch(url, {method, headers: H, body: body ? JSON.stringify(body) : null}).then(r => r.json());
 }
 
-// Calculate the maximum allowed span from a starting atomic slot to prevent crossing lunch or day-end
-function getMaxSpan(startCol) {
-  const HOUR_ORDER = ['9', '10', '11', '12', '1', '2', '3', '4', '5'];
-  const start = startCol.split('-')[0];
-  const startIndex = HOUR_ORDER.indexOf(start);
-  if (startIndex === -1) return 1;
-  if (start === '12') return 1; // Lunch is always 1 hour
-  if (startIndex < 3) {
-    return 3 - startIndex; // Pre-lunch slots cannot cross 12 PM (index 3)
-  }
-  return HOUR_ORDER.length - 1 - startIndex; // Post-lunch slots cannot cross 5 PM
+function go(panel, title) {
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('panel-' + panel).classList.add('active');
+  document.getElementById('page-title').textContent = title;
+  event.currentTarget.classList.add('active');
+  if (panel === 'audit') loadAudit();
+  if (panel === 'deptinfo') loadDeptInfo();
+  if (panel === 'curriculum') loadCurriculum();
 }
 
-function getCellBg(subj){
-  for(const [k,v] of Object.entries(SUBJ_COLORS)){ if(subj.includes(k)) return [v,SUBJ_TEXT[k]||'#1a1a2e']; }
-  return ['#e8eeff','#1a1a2e'];
+function filterTable(tbodyId, q) {
+  const q2 = q.toLowerCase();
+  document.querySelectorAll('#' + tbodyId + ' tr').forEach(tr => {
+    tr.style.display = tr.textContent.toLowerCase().includes(q2) ? '' : 'none';
+  });
 }
-function isLab(subj){
-  const s=subj.toUpperCase();
-  return s.includes('LAB')||s.includes('WORKSHOP')||s.includes('GRAPHICS')||s.includes(' WS');
-}
-function showToast(msg){ const t=document.getElementById('save-status-toast'); t.textContent=msg||'✓ Saved!'; t.className='save-status success'; setTimeout(()=>t.className='save-status',3500); }
 
-// ── Auth ─────────────────────────────────────────────────────────────────────
-function logoutAdmin(){ localStorage.removeItem('nbkr_admin_pwd'); location.reload(); }
-window.addEventListener('DOMContentLoaded',()=>{
-  // Auto-login: try URL param first, then localStorage, then default password
-  const urlPwd = new URLSearchParams(window.location.search).get('pwd');
-  const savedPwd = localStorage.getItem('nbkr_admin_pwd');
-  const pwd = urlPwd || savedPwd || 'nbkr2026';
+function esc(s) { return String(s||'').replace(/'/g, "\\'"); }
+function trunc(s, n=60) { return String(s||'').length > n ? String(s).slice(0,n)+'…' : String(s||''); }
 
-  fetch('/admin/data',{headers:{'X-Admin-Password':pwd}}).then(r=>{
-    if(r.status===200){
-      adminPwd = pwd;
-      localStorage.setItem('nbkr_admin_pwd', pwd);
-      r.json().then(d=>{ serverData=d; initDashboard(); });
-    }
-  }).catch(()=>{});
+// ── On load ──────────────────────────────────────────────────────────────────
+window.addEventListener('load', () => {
+  localStorage.setItem('nbkr_admin_pwd', PWD);
+  loadFaculty(); loadStudents(); loadBusFees(); loadNotices();
+  loadPlacements(); loadEvents(); loadKnowledge(); loadSubjects();
+  loadCurriculum();
 });
-
-// ── Init ─────────────────────────────────────────────────────────────────────
-function initDashboard(){
-  updateBadges(); renderSectionTabs(); renderSubjectsTable(); renderFacultyMapTable();
-  renderCircularsList(); renderFacultyList(); renderKnowledgeTable();
-}
-function updateBadges(){
-  const tt=Object.keys(serverData.timetable_data.timetable||{}).length;
-  const circ=(serverData.circular_data||[]).length;
-  const fac=(serverData.faculty_data||[]).length;
-  const kb=Object.keys(serverData.knowledge_data||{}).length;
-  document.getElementById('badge-tt').textContent=tt;
-  document.getElementById('badge-circ').textContent=circ;
-  document.getElementById('badge-fac').textContent=fac;
-  document.getElementById('badge-kb').textContent=kb;
-  document.getElementById('stat-sections').textContent=tt;
-  document.getElementById('stat-faculty').textContent=fac;
-  document.getElementById('stat-circulars').textContent=circ;
-  document.getElementById('stat-faq').textContent=kb;
-}
-function switchTab(id){
-  document.querySelectorAll('.tab-panel').forEach(p=>p.classList.remove('active'));
-  document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
-  document.getElementById(id).classList.add('active');
-  document.querySelectorAll('.tab-btn').forEach(b=>{ if(b.getAttribute('onclick')&&b.getAttribute('onclick').includes(id)) b.classList.add('active'); });
-  const titles={'tab-timetables':'📅 Visual Timetable Editor','tab-circulars':'📢 Circulars & Notices','tab-faculty':'👤 Faculty Management','tab-knowledge':'💡 FAQ Knowledge Base'};
-  document.getElementById('tab-title').textContent=titles[id]||'Admin';
-  activeTab=id;
-}
 </script>
 
 <script>
-// ── Section tabs ─────────────────────────────────────────────────────────────
-function renderSectionTabs(){
-  const container=document.getElementById('section-tabs');
-  const sections=Object.keys(serverData.timetable_data.timetable||{});
-  container.innerHTML='';
-  sections.forEach(sec=>{
-    const btn=document.createElement('button');
-    btn.className='sec-tab'+(sec===currentSection?' active':'');
-    btn.textContent=sec.replace(/_/g,' ');
-    btn.onclick=()=>selectSection(sec);
-    container.appendChild(btn);
-  });
-  if(!currentSection && sections.length>0) selectSection(sections[0]);
-  else if(currentSection) renderTimetableGrid(currentSection);
-  else document.getElementById('tt-grid-container').innerHTML=
-    '<p style="color:#94a3b8;padding:20px;text-align:center">No sections yet — click ➕ New Section to start.</p>';
-}
-function selectSection(sec){
-  currentSection=sec;
-  document.querySelectorAll('.sec-tab').forEach(b=>b.classList.toggle('active',b.textContent===sec.replace(/_/g,' ')));
-  renderTimetableGrid(sec);
-}
-
-// ── Timetable grid ───────────────────────────────────────────────────────────
-function renderTimetableGrid(sectionKey){
-  const tt=serverData.timetable_data.timetable||{};
-  const data=tt[sectionKey]||{};
-  const subjectMap=serverData.timetable_data.subjects||{};
-  const activeCols=ATOMIC_COLS;
-
-  let html='<div class="tt-grid-wrap"><table class="tt-grid"><thead><tr><th>Day \\ Hour</th>';
-  activeCols.forEach(c=>{
-    if(c==='12-1') html+='<th style="background:#555;width:52px;min-width:52px">12-1<br><small style="font-weight:400;opacity:.8">Lunch</small></th>';
-    else html+=`<th>${c.replace('-',' - ')}</th>`;
-  });
-  html+='</tr></thead><tbody>';
-
-  DAYS.forEach(day=>{
-    const dayData=data[day]||{};
-    const colMap={};
-    Object.entries(dayData).forEach(([slot,val])=>{
-      const covered=getCoveredSlots(slot).filter(c=>activeCols.includes(c));
-      if(!covered.length) return;
-      colMap[covered[0]]={val,span:covered.length};
-      covered.slice(1).forEach(c=>colMap[c]={skip:true});
-    });
-    html+=`<tr><td class="day-cell">${day.substring(0,3)}</td>`;
-    activeCols.forEach(col=>{
-      if(colMap[col]&&colMap[col].skip) return;
-      const entry=colMap[col];
-      html+=buildCellHTML(sectionKey,day,col,entry?entry.val:'',entry?entry.span:1);
-    });
-    html+='</tr>';
-  });
-  html+='</tbody></table></div>';
-  document.getElementById('tt-grid-container').innerHTML=html;
-
-  const usedSubj=new Set();
-  Object.values(data).forEach(dd=>Object.values(dd).forEach(val=>{
-    if(val && val !== '-'){
-      const m=val.match(/^(.+?)\s*\((.+)\)$/);
-      const s=m?m[1].trim():val.trim();
-      if(!LUNCH_VALS.has(s)) usedSubj.add(s);
-    }
-  }));
-  let leg='';
-  usedSubj.forEach(s=>{ const [bg,fg]=getCellBg(s); leg+=`<span class="legend-chip" style="background:${bg};color:${fg}">( ${s} ) ${subjectMap[s]||''}</span>`; });
-  document.getElementById('tt-legend').innerHTML=leg;
-}
-
-function buildCellHTML(section,day,col,val,span){
-  span=span||1;
-  const enc=s=>s.replace(/"/g,'&quot;').replace(/'/g,'&#39;');
-  const onclick=`openCellModal('${enc(section)}','${enc(day)}','${enc(col)}')`;
-  const cs=span>1?` colspan="${span}"`:'';
-  const lunchSt='background:#f0f0f0;width:52px;min-width:52px';
-  if(!val||val==='-'){
-    if(col==='12-1') return `<td${cs} class="slot-cell" onclick="${onclick}" style="${lunchSt}"><div class="slot-inner empty-slot" style="color:#bbb;font-size:20px">+</div></td>`;
-    return `<td${cs} class="slot-cell empty-cell" onclick="${onclick}"><div class="slot-inner empty-slot">+</div></td>`;
-  }
-  if(LUNCH_VALS.has(val.trim())){
-    const br=val.trim()==='BREAK';
-    return `<td${cs} class="slot-cell" onclick="${onclick}" style="${lunchSt}"><div class="slot-inner lunch-slot" style="font-size:${br?'11':'15'}px;font-weight:900;color:#666;font-style:${br?'normal':'italic'}">${val}</div></td>`;
-  }
-  const m=val.match(/^(.+?)\s*\((.+)\)$/);
-  const subj=m?m[1].trim():val.trim(), fac=m?m[2].trim():'';
-  let bg,fg;
-  if(isLab(subj)||span>=3){bg='#ffe066';fg='#5a4000';}
-  else{[bg,fg]=getCellBg(subj);}
-  return `<td${cs} class="slot-cell" onclick="${onclick}" style="background:${bg}"><div class="slot-inner" style="background:${bg};color:${fg}"><div class="subj-name">${subj}</div>${fac?`<div class="fac-name">( ${fac} )</div>`:''}</div></td>`;
-}
-
-// ── Cell Edit Modal ────────────────────────────────────────────────────────
-let selectedSubject='', selectedFaculty=[], selectedSpan=1;
-let modalStartCol = '';
-let modalOriginalSlotKey = '';
-
-function openCellModal(section,day,col){
-  document.getElementById('modal-section').value=section;
-  document.getElementById('modal-day').value=day;
-  document.getElementById('modal-slot').value=col;
-
-  const tt=serverData.timetable_data.timetable||{};
-  const dayData=(tt[section]&&tt[section][day])||{};
-  
-  let existingVal='';
-  modalOriginalSlotKey = '';
-  modalStartCol = col;
-  selectedSpan = 1;
-
-  // Check if this clicked column is covered by any existing slot
-  for (const [slotKey, val] of Object.entries(dayData)) {
-    const covered = getCoveredSlots(slotKey);
-    if (covered.includes(col)) {
-      existingVal = val;
-      modalOriginalSlotKey = slotKey;
-      modalStartCol = covered[0]; // The actual start of the slot
-      selectedSpan = covered.length; // The duration of the slot
-      break;
-    }
-  }
-
-  // Pre-fill subject and faculty
-  if (existingVal) {
-    const m = existingVal.match(/^(.+?)\s*\((.+)\)$/);
-    if (m) {
-      selectedSubject = m[1].trim();
-      selectedFaculty = m[2].split(',').map(f => f.trim());
-    } else {
-      selectedSubject = existingVal.trim();
-      selectedFaculty = [];
-    }
-  } else {
-    selectedSubject = '';
-    selectedFaculty = [];
-  }
-
-  // Display the edit info
-  const displayStart = modalStartCol.split('-')[0];
-  const displayEnd = getEndTime(modalStartCol, selectedSpan);
-  document.getElementById('modal-info').textContent = 
-    `${section.replace(/_/g, ' ')} · ${day} · ${displayStart} - ${displayEnd}`;
-
-  buildModalUI(col);
-  document.getElementById('cell-modal-overlay').classList.add('open');
-}
-
-function buildModalUI(col){
-  const isLunchCol=(col==='12-1');
-  const modal=document.querySelector('.cell-modal');
-
-  if(isLunchCol){
-    // Lunch column: show L/U/N/C/H/BREAK only
-    modal.querySelector('#subject-grid').innerHTML=
-      ['L','U','N','C','H','BREAK'].map(v=>`<div class="subj-chip ${selectedSubject===v?'selected':''}"
-        style="background:#f0f0f0;color:#555;font-size:${v==='BREAK'?'12':'18'}px;font-weight:900;font-style:${v==='BREAK'?'normal':'italic'}"
-        onclick="selectSubject('${v}')">${v}</div>`).join('');
-    modal.querySelector('#faculty-chips').innerHTML='';
-    
-    // Hide span + faculty labels
-    document.querySelectorAll('.modal-span-row,.modal-fac-label,#faculty-chips').forEach(el=>el.style.display='none');
-    return;
-  }
-  
-  // Show span + faculty
-  document.querySelectorAll('.modal-span-row,.modal-fac-label,#faculty-chips').forEach(el=>el.style.display='');
-
-  // Render Span / Duration buttons dynamically
-  const maxSpan = getMaxSpan(modalStartCol);
-  
-  // Ensure selectedSpan is within bounds
-  if (selectedSpan > maxSpan) selectedSpan = 1;
-
-  const spanRow=document.querySelector('.modal-span-row');
-  if(spanRow) {
-    let spanButtonsHtml = `<label style="margin-bottom:6px;display:block;font-size:12px;font-weight:600;color:#94a3b8;text-transform:uppercase">Duration</label>
-      <div style="display:flex;gap:8px;margin-bottom:14px">`;
-    for (let n = 1; n <= maxSpan; n++) {
-      const activeStyle = selectedSpan === n ? 'border-color:#6366f1;background:rgba(99,102,241,.2);color:#a5b4fc' : '';
-      spanButtonsHtml += `<button onclick="setSpan(${n})" id="span-btn-${n}" class="btn-secondary" style="flex:1;padding:8px;${activeStyle}">${n} hr${n>1?'s':''}</button>`;
-    }
-    spanButtonsHtml += `</div>`;
-    spanRow.innerHTML = spanButtonsHtml;
-  }
-
-  renderSubjectGrid();
-  renderFacultyChips();
-}
-
-function setSpan(n){
-  selectedSpan=n;
-  const maxSpan = getMaxSpan(modalStartCol);
-  for (let i = 1; i <= maxSpan; i++) {
-    const b = document.getElementById('span-btn-' + i);
-    if (!b) continue;
-    b.style.borderColor = i === n ? '#6366f1' : '';
-    b.style.background = i === n ? 'rgba(99,102,241,.2)' : '';
-    b.style.color = i === n ? '#a5b4fc' : '';
-  }
-
-  const section = document.getElementById('modal-section').value;
-  const day = document.getElementById('modal-day').value;
-  const displayStart = modalStartCol.split('-')[0];
-  const displayEnd = getEndTime(modalStartCol, selectedSpan);
-  document.getElementById('modal-info').textContent = 
-    `${section.replace(/_/g, ' ')} · ${day} · ${displayStart} - ${displayEnd}`;
-}
-
-function closeCellModal(){document.getElementById('cell-modal-overlay').classList.remove('open');}
-
-function renderSubjectGrid(){
-  const subjects=serverData.timetable_data.subjects||{};
-  let html='';
-  Object.keys(subjects).forEach(code=>{
-    const labSubj=isLab(code);
-    const [bg,fg]=labSubj?['#ffe066','#5a4000']:getCellBg(code);
-    const sel=selectedSubject===code?'selected':'';
-    html+=`<div class="subj-chip ${sel}" style="background:${bg};color:${fg};${labSubj?'border:2px solid #c8a000':''}" onclick="selectSubject('${code.replace(/'/g,"\\'")}')">
-      <div style="font-weight:700">${code}</div><div style="font-size:9px;opacity:.7;margin-top:1px">${subjects[code]||''}</div></div>`;
-  });
-  document.getElementById('subject-grid').innerHTML=html;
-}
-
-function renderFacultyChips(){
-  const faculty=serverData.timetable_data.faculty||{};
-  document.getElementById('faculty-chips').innerHTML=Object.entries(faculty).map(([init,name])=>
-    `<div class="fac-chip ${selectedFaculty.includes(init)?'selected':''}" onclick="toggleFaculty('${init.replace(/'/g,"\\'")}')"><b>${init}</b> — ${name}</div>`).join('');
-}
-
-function selectSubject(code){
-  selectedSubject=code;
-  document.querySelectorAll('.subj-chip').forEach(c=>{
-    const d=c.querySelector('div'); c.classList.toggle('selected',d?d.textContent===code:c.textContent.trim()===code);
-  });
-  if(isLab(code)){
-    const maxSpan = getMaxSpan(modalStartCol);
-    if(maxSpan >= 3 && selectedSpan < 3) setSpan(3);
-    else if(maxSpan < 3 && selectedSpan < maxSpan) setSpan(maxSpan);
-  }
-}
-
-function toggleFaculty(init){
-  const idx=selectedFaculty.indexOf(init);
-  if(idx>=0) selectedFaculty.splice(idx,1); else selectedFaculty.push(init);
-  document.querySelectorAll('.fac-chip').forEach(c=>{
-    const b=c.querySelector('b'); if(b&&b.textContent===init) c.classList.toggle('selected',selectedFaculty.includes(init));
+// ── FACULTY ──────────────────────────────────────────────────────────────────
+let facList = [];
+function loadFaculty() {
+  api('/admin/faculty/list').then(d => {
+    facList = d.faculty || [];
+    document.getElementById('fac-count').textContent = facList.length + ' members';
+    document.getElementById('c-fac').textContent = facList.length;
+    document.getElementById('ss-fac').textContent = facList.length;
+    const b = document.getElementById('fac-tbody');
+    b.innerHTML = facList.map((f,i) => `<tr>
+      <td>${i+1}</td><td><b>${f.name||'—'}</b></td><td style="font-size:11px">${f.designation||'—'}</td>
+      <td>${f.phone||'—'}</td><td style="font-size:11px">${(f.email||'').split(',')[0]}</td>
+      <td style="font-size:11px">${f.Qualification||'—'}</td>
+      <td style="white-space:nowrap">
+        <button class="btn btn-s btn-sm" onclick="editFaculty(${i})">✏️</button>
+        <button class="btn btn-r btn-sm" onclick="deleteFaculty('${esc(f.name)}')">🗑️</button>
+      </td></tr>`).join('');
   });
 }
-
-function applyCell(){
-  const section=document.getElementById('modal-section').value;
-  const day=document.getElementById('modal-day').value;
-  
-  if(!selectedSubject){closeCellModal();return;}
-  let val=selectedSubject;
-  if(selectedFaculty.length>0&&!LUNCH_VALS.has(selectedSubject)) val+=` (${selectedFaculty.join(', ')})`;
-  
-  const tt=serverData.timetable_data.timetable;
-  if(!tt[section]) tt[section]={};
-  if(!tt[section][day]) tt[section][day]={};
-  
-  // 1. Delete original slot key
-  if(modalOriginalSlotKey) {
-    delete tt[section][day][modalOriginalSlotKey];
-  }
-
-  // 2. Determine new slot key
-  const displayStart = modalStartCol.split('-')[0];
-  const displayEnd = getEndTime(modalStartCol, selectedSpan);
-  const newSlotKey = `${displayStart}-${displayEnd}`;
-
-  // 3. Find and remove overlapping slots
-  const newCovered = getCoveredSlots(newSlotKey);
-  Object.keys(tt[section][day]).forEach(slotKey => {
-    const covered = getCoveredSlots(slotKey);
-    if (covered.some(c => newCovered.includes(c))) {
-      delete tt[section][day][slotKey];
-    }
-  });
-
-  // 4. Save new slot
-  tt[section][day][newSlotKey]=val;
-
-  closeCellModal(); 
-  renderTimetableGrid(section);
+function editFaculty(i) {
+  const f = facList[i];
+  document.getElementById('fac-name').value = f.name||'';
+  document.getElementById('fac-desig').value = f.designation||'Assistant Professor';
+  document.getElementById('fac-qual').value = f.Qualification||'';
+  document.getElementById('fac-doj').value = f.date_of_joining||'';
+  document.getElementById('fac-phone').value = f.phone||'';
+  document.getElementById('fac-email').value = f.email||'';
+  document.getElementById('fac-spec').value = f.specialization||'';
+  document.getElementById('fac-exp').value = f.experience||'';
+  document.getElementById('fac-edit-idx').value = i;
 }
-
-function clearCell(){
-  const section=document.getElementById('modal-section').value;
-  const day=document.getElementById('modal-day').value;
-  const tt=serverData.timetable_data.timetable;
-  
-  if(tt[section]&&tt[section][day]&&modalOriginalSlotKey){
-    delete tt[section][day][modalOriginalSlotKey];
-  }
-  
-  closeCellModal(); 
-  renderTimetableGrid(section);
+function clearFacForm() {
+  ['fac-name','fac-qual','fac-doj','fac-phone','fac-email','fac-spec','fac-exp'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('fac-edit-idx').value = '-1';
 }
-document.getElementById('cell-modal-overlay').addEventListener('click',function(e){if(e.target===this)closeCellModal();});
-</script>
-
-<script>
-// ── Section management ──────────────────────────────────────────────────────
-function addNewSection() {
-  const name = prompt("Enter new section name (e.g. 1st_Year_Section_C):");
-  if (!name) return;
-  const cleanName = name.trim().replace(/\s+/g, '_');
-  if (!serverData.timetable_data.timetable) {
-    serverData.timetable_data.timetable = {};
-  }
-  if (serverData.timetable_data.timetable[cleanName]) {
-    alert("Section already exists!");
-    return;
-  }
-  
-  // Initialize empty days
-  const days = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
-  serverData.timetable_data.timetable[cleanName] = {};
-  days.forEach((day, idx) => {
-    // Mon-Fri uses L, U, N, C, H; Saturday uses BREAK for the 12-1 slot
-    const lunchLetters = ["L", "U", "N", "C", "H"];
-    serverData.timetable_data.timetable[cleanName][day] = {
-      "12-1": day === "Saturday" ? "BREAK" : lunchLetters[idx]
-    };
-  });
-  
-  currentSection = cleanName;
-  renderSectionTabs();
-  updateBadges();
-  showToast("✓ Section added. Click 'Save All' to persist.");
-}
-
-function deleteCurrentSection() {
-  if (!currentSection) return;
-  if (!confirm(`Are you sure you want to delete the section "${currentSection.replace(/_/g, ' ')}"?`)) return;
-  
-  delete serverData.timetable_data.timetable[currentSection];
-  
-  const sections = Object.keys(serverData.timetable_data.timetable || {});
-  if (sections.length > 0) {
-    currentSection = sections[0];
-  } else {
-    currentSection = null;
-  }
-  
-  renderSectionTabs();
-  updateBadges();
-  showToast("✓ Section deleted. Click 'Save All' to persist.");
-}
-
-// ── Subject & Faculty map tables ─────────────────────────────────────────────
-function renderSubjectsTable(){
-  const subjects=serverData.timetable_data.subjects||{};
-  let html='';
-  Object.entries(subjects).forEach(([code,name])=>{
-    const escapedCode = code.replace(/"/g, '&quot;');
-    const escapedName = name.replace(/"/g, '&quot;');
-    html+=`<tr>
-      <td><input value="${escapedCode}" data-old-code="${escapedCode}" onchange="onSubjectCodeChange(this)" style="width:100%"/></td>
-      <td><input value="${escapedName}" data-code="${escapedCode}" onchange="onSubjectNameChange(this)" style="width:100%"/></td>
-      <td><button class="btn-danger" data-code="${escapedCode}" onclick="onSubjectDelete(this)">✖</button></td>
-    </tr>`;
-  });
-  document.getElementById('subjects-tbody').innerHTML=html;
-}
-function addSubjectRow(){
-  const code=prompt('Subject code (e.g. ML):'); if(!code) return;
-  const name=prompt('Full name:'); if(!name) return;
-  serverData.timetable_data.subjects[code.trim()]=name.trim();
-  renderSubjectsTable();
-}
-function onSubjectCodeChange(input) {
-  const oldCode = input.getAttribute('data-old-code');
-  const newCode = input.value.trim();
-  if (!newCode) {
-    input.value = oldCode;
-    return;
-  }
-  if (oldCode !== newCode) {
-    serverData.timetable_data.subjects[newCode] = serverData.timetable_data.subjects[oldCode];
-    delete serverData.timetable_data.subjects[oldCode];
-    renderSubjectsTable();
-  }
-}
-function onSubjectNameChange(input) {
-  const code = input.getAttribute('data-code');
-  serverData.timetable_data.subjects[code] = input.value.trim();
-}
-function onSubjectDelete(button) {
-  const code = button.getAttribute('data-code');
-  if (confirm(`Delete subject "${code}"?`)) {
-    delete serverData.timetable_data.subjects[code];
-    renderSubjectsTable();
-  }
-}
-
-function renderFacultyMapTable(){
-  const faculty=serverData.timetable_data.faculty||{};
-  let html='';
-  Object.entries(faculty).forEach(([init,name])=>{
-    const escapedInit = init.replace(/"/g, '&quot;');
-    const escapedName = name.replace(/"/g, '&quot;');
-    html+=`<tr>
-      <td><input value="${escapedInit}" data-old-init="${escapedInit}" onchange="onFacultyInitChange(this)" style="width:100%"/></td>
-      <td><input value="${escapedName}" data-init="${escapedInit}" onchange="onFacultyNameChange(this)" style="width:100%"/></td>
-      <td><button class="btn-danger" data-init="${escapedInit}" onclick="onFacultyMapDelete(this)">✖</button></td>
-    </tr>`;
-  });
-  document.getElementById('faculty-map-tbody').innerHTML=html;
-}
-function addFacultyMapRow(){
-  const init=prompt('Faculty initials (e.g. ANR):'); if(!init) return;
-  const name=prompt('Full name:'); if(!name) return;
-  serverData.timetable_data.faculty[init.trim()]=name.trim();
-  renderFacultyMapTable();
-}
-function onFacultyInitChange(input) {
-  const oldInit = input.getAttribute('data-old-init');
-  const newInit = input.value.trim();
-  if (!newInit) {
-    input.value = oldInit;
-    return;
-  }
-  if (oldInit !== newInit) {
-    serverData.timetable_data.faculty[newInit] = serverData.timetable_data.faculty[oldInit];
-    delete serverData.timetable_data.faculty[oldInit];
-    renderFacultyMapTable();
-  }
-}
-function onFacultyNameChange(input) {
-  const init = input.getAttribute('data-init');
-  serverData.timetable_data.faculty[init] = input.value.trim();
-}
-function onFacultyMapDelete(button) {
-  const init = button.getAttribute('data-init');
-  if (confirm(`Delete faculty initials "${init}"?`)) {
-    delete serverData.timetable_data.faculty[init];
-    renderFacultyMapTable();
-  }
-}
-
-// ── Save timetable ───────────────────────────────────────────────────────────
-function saveTimetableData(){
-  const btn=document.getElementById('btn-save-tt');
-  btn.textContent='Saving…'; btn.classList.add('saving');
-  fetch('/admin/save-timetable',{
-    method:'POST', headers:{'Content-Type':'application/json','X-Admin-Password':adminPwd},
-    body:JSON.stringify(serverData.timetable_data)
-  }).then(r=>r.json()).then(d=>{
-    btn.textContent='💾 Save All'; btn.classList.remove('saving');
-    showToast(d.message||'✓ Timetable saved!');
-  }).catch(()=>{ btn.textContent='💾 Save All'; btn.classList.remove('saving'); showToast('✖ Save failed'); });
-}
-
-// ── Circulars ────────────────────────────────────────────────────────────────
-function renderCircularsList(){
-  const list=document.getElementById('circulars-list'); list.innerHTML='';
-  (serverData.circular_data||[]).forEach((c,i)=>{
-    const div=document.createElement('div'); div.className='list-item';
-    div.innerHTML=`<div><div style="font-weight:600">${c.title||'Untitled'}</div><div class="item-sub">${c.id||''} · ${c.date||''}</div></div>`;
-    div.onclick=()=>editCircular(i); list.appendChild(div);
-  });
-}
-function editCircular(i){
-  const c=serverData.circular_data[i];
-  document.getElementById('circ-index').value=i;
-  document.getElementById('circ-id').value=c.id||'';
-  document.getElementById('circ-date').value=c.date||'';
-  document.getElementById('circ-title').value=c.title||'';
-  document.getElementById('circ-content').value=c.content||'';
-  document.getElementById('circ-applic').value=c.applicable_to||'';
-  document.getElementById('circ-portal').value=c.payment_portal||'';
-  const kd=c.key_dates||{};
-  document.getElementById('circ-kd-commence').value=kd.class_commencement||'';
-  document.getElementById('circ-kd-deadline').value=kd.early_bird_deadline||'';
-  document.getElementById('circ-kd-discount').value=kd.early_bird_discount||'';
-  document.querySelectorAll('#circulars-list .list-item').forEach((el,j)=>el.classList.toggle('active',j===i));
-}
-function addNewCircularForm(){
-  serverData.circular_data.push({id:'',date:'',title:'New Notice',content:'',applicable_to:'',payment_portal:'',key_dates:{}});
-  renderCircularsList(); editCircular(serverData.circular_data.length-1);
-}
-function saveCircularRecord(){
-  const i=parseInt(document.getElementById('circ-index').value);
-  if(isNaN(i)) return;
-  serverData.circular_data[i]={
-    id:document.getElementById('circ-id').value,
-    date:document.getElementById('circ-date').value,
-    title:document.getElementById('circ-title').value,
-    content:document.getElementById('circ-content').value,
-    applicable_to:document.getElementById('circ-applic').value,
-    payment_portal:document.getElementById('circ-portal').value,
-    key_dates:{
-      class_commencement:document.getElementById('circ-kd-commence').value,
-      early_bird_deadline:document.getElementById('circ-kd-deadline').value,
-      early_bird_discount:document.getElementById('circ-kd-discount').value
-    }
+function saveFaculty() {
+  const idx = parseInt(document.getElementById('fac-edit-idx').value);
+  const body = {
+    name: document.getElementById('fac-name').value.trim(),
+    designation: document.getElementById('fac-desig').value,
+    Qualification: document.getElementById('fac-qual').value.trim(),
+    date_of_joining: document.getElementById('fac-doj').value,
+    phone: document.getElementById('fac-phone').value.trim(),
+    email: document.getElementById('fac-email').value.trim(),
+    specialization: document.getElementById('fac-spec').value.trim(),
+    experience: document.getElementById('fac-exp').value.trim(),
+    timetable: {}
   };
-  fetch('/admin/save-circular',{
-    method:'POST',headers:{'Content-Type':'application/json','X-Admin-Password':adminPwd},
-    body:JSON.stringify(serverData.circular_data)
-  }).then(r=>r.json()).then(d=>{ renderCircularsList(); updateBadges(); showToast(d.message||'✓ Saved'); });
-}
-function deleteCircular(){
-  const i=parseInt(document.getElementById('circ-index').value); if(isNaN(i)) return;
-  if(!confirm('Delete this notice?')) return;
-  serverData.circular_data.splice(i,1);
-  fetch('/admin/save-circular',{method:'POST',headers:{'Content-Type':'application/json','X-Admin-Password':adminPwd},body:JSON.stringify(serverData.circular_data)})
-    .then(()=>{ 
-      renderCircularsList(); 
-      updateBadges(); 
-      showToast('✓ Deleted'); 
-      // Clear form inputs
-      document.getElementById('circ-index').value='';
-      document.getElementById('circ-id').value='';
-      document.getElementById('circ-date').value='';
-      document.getElementById('circ-title').value='';
-      document.getElementById('circ-content').value='';
-      document.getElementById('circ-applic').value='';
-      document.getElementById('circ-portal').value='';
-      document.getElementById('circ-kd-commence').value='';
-      document.getElementById('circ-kd-deadline').value='';
-      document.getElementById('circ-kd-discount').value='';
+  if (!body.name) return toast('Name is required', true);
+  if (idx >= 0) {
+    body.timetable = facList[idx].timetable || {};
+    facList[idx] = {...facList[idx], ...body};
+    api('/admin/save-faculty','POST', facList).then(()=>{ toast('✓ Faculty updated'); clearFacForm(); loadFaculty(); });
+  } else {
+    api('/admin/faculty/add','POST', body).then(d => {
+      if (d.error) return toast(d.error, true);
+      toast('✓ Faculty added'); clearFacForm(); loadFaculty();
     });
+  }
+}
+function deleteFaculty(name) {
+  if (!confirm('Delete ' + name + '?')) return;
+  api('/admin/faculty/delete','DELETE', {name}).then(d => {
+    if (d.error) return toast(d.error, true);
+    toast('🗑️ Deleted'); loadFaculty();
+  });
+}
+
+// ── STUDENTS ─────────────────────────────────────────────────────────────────
+function loadStudents() {
+  api('/admin/student/list').then(d => {
+    const list = d.students || [];
+    document.getElementById('stu-count').textContent = list.length + ' records';
+    document.getElementById('c-stu').textContent = list.length;
+    document.getElementById('ss-stu').textContent = list.length;
+    document.getElementById('stu-tbody').innerHTML = list.map((s,i) => `<tr>
+      <td>${i+1}</td><td><b>${s.roll_no||'—'}</b></td><td>${s.name||'—'}</td>
+      <td>${s.phone||'—'}</td><td style="font-size:11px">${s.email||'—'}</td>
+      <td>${s.branch||'—'}</td><td>${s.section||'—'}</td><td>${s.cgpa||'—'}</td>
+      <td><button class="btn btn-r btn-sm" onclick="deleteStudent('${esc(s.roll_no)}')">🗑️</button></td>
+    </tr>`).join('');
+  });
+}
+function addStudent() {
+  const body = {
+    roll_no: document.getElementById('stu-roll').value.trim().toUpperCase(),
+    name: document.getElementById('stu-name').value.trim(),
+    phone: document.getElementById('stu-phone').value.trim(),
+    email: document.getElementById('stu-email').value.trim(),
+    branch: document.getElementById('stu-branch').value,
+    section: document.getElementById('stu-sec').value,
+    cgpa: document.getElementById('stu-cgpa').value,
+    school: document.getElementById('stu-school').value.trim(),
+    tenth_percentage:'', inter_diploma:'', inter_percentage:''
+  };
+  if (!body.roll_no || !body.name) return toast('Roll No and Name required', true);
+  api('/admin/student/add','POST', body).then(d => {
+    if (d.error) return toast(d.error, true);
+    toast('✓ Student added');
+    ['stu-roll','stu-name','stu-phone','stu-email','stu-cgpa','stu-school'].forEach(id=>document.getElementById(id).value='');
+    loadStudents();
+  });
+}
+function deleteStudent(roll) {
+  if (!confirm('Delete student ' + roll + '?')) return;
+  api('/admin/student/delete','DELETE', {roll_no: roll}).then(d => {
+    if (d.error) return toast(d.error, true);
+    toast('🗑️ Deleted'); loadStudents();
+  });
+}
+
+// ── CURRICULUM ────────────────────────────────────────────────────────────────
+let curSems = [];
+function loadCurriculum() {
+  api('/admin/curriculum/list').then(d => {
+    curSems = d.semesters || [];
+    ['cur-sem','del-cur-sem'].forEach(id => {
+      document.getElementById(id).innerHTML = curSems.map(s=>`<option value="${s}">${s}</option>`).join('');
+    });
+    renderCurView(d.curriculum || {});
+  });
+}
+function renderCurView(curr) {
+  let html = '';
+  for (const [sem, secs] of Object.entries(curr)) {
+    html += `<div style="margin-bottom:14px"><div style="padding:7px 12px;background:rgba(124,58,237,.15);border-radius:6px;font-size:13px;font-weight:700;color:#a78bfa;margin-bottom:6px">${sem}</div>`;
+    for (const [sec, items] of Object.entries(secs)) {
+      if (!items || !items.length) continue;
+      html += `<div style="margin-left:10px;margin-bottom:8px"><div style="font-size:10.5px;font-weight:700;color:#666;text-transform:uppercase;margin-bottom:4px">${sec}</div>`;
+      html += `<table style="width:100%;border-collapse:collapse;font-size:12px">`;
+      items.forEach((item,i)=>{
+        const c=item.Course||item.Option||'—', l=item.Lab||'—';
+        html+=`<tr style="background:${i%2?'':'rgba(255,255,255,.02)'}">
+          <td style="padding:5px 10px;color:#e8eaf6">${c}</td>
+          <td style="padding:5px 10px;color:${l==='None'||l==='—'?'#444':'#10b981'}">${l}</td></tr>`;
+      });
+      html += '</table></div>';
+    }
+    html += '</div>';
+  }
+  document.getElementById('cur-view').innerHTML = html || '<p style="color:#666">No curriculum data.</p>';
+}
+function addCurriculumCourse() {
+  const body = {semester:document.getElementById('cur-sem').value, section:document.getElementById('cur-sec').value,
+    course:document.getElementById('cur-course').value.trim(), lab:document.getElementById('cur-lab').value.trim()||'None'};
+  if (!body.course) return toast('Course name required', true);
+  api('/admin/curriculum/add-course','POST', body).then(d=>{
+    if(d.error) return toast(d.error, true);
+    toast('✓ Course added'); document.getElementById('cur-course').value=''; document.getElementById('cur-lab').value='';
+    loadCurriculum();
+  });
+}
+function deleteCurriculumCourse() {
+  const body = {semester:document.getElementById('del-cur-sem').value, section:document.getElementById('del-cur-sec').value,
+    course:document.getElementById('del-cur-course').value.trim()};
+  if (!body.course) return toast('Course name required', true);
+  if (!confirm('Delete "' + body.course + '"?')) return;
+  api('/admin/curriculum/delete-course','DELETE', body).then(d=>{
+    if(d.error) return toast(d.error, true);
+    toast('🗑️ Deleted'); document.getElementById('del-cur-course').value=''; loadCurriculum();
+  });
 }
 </script>
 
 <script>
-// â”€â”€ Faculty â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-function renderFacultyList(){
-  const list=document.getElementById('faculty-list'); list.innerHTML='';
-  (serverData.faculty_data||[]).forEach((f,i)=>{
-    const div=document.createElement('div'); div.className='list-item';
-    div.innerHTML=`<div><div style="font-weight:600">${f.name||'Unnamed'}</div><div class="item-sub">${f.designation||''}</div></div>`;
-    div.onclick=()=>editFaculty(i); list.appendChild(div);
+// ── BUS FEES ──────────────────────────────────────────────────────────────────
+let busData = {};
+function loadBusFees() {
+  api('/admin/busfees/list').then(d => {
+    busData = d.bus_fees || {};
+    document.getElementById('bus-year').value = d.academic_year || '2026-27';
+    const cnt = Object.keys(busData).length;
+    document.getElementById('c-bus').textContent = cnt;
+    document.getElementById('ss-bus').textContent = cnt;
+    renderBusRoutes();
   });
 }
-function editFaculty(i){
-  const f=serverData.faculty_data[i];
-  document.getElementById('fac-index').value=i;
-  document.getElementById('fac-name').value=f.name||'';
-  document.getElementById('fac-designation').value=f.designation||'Assistant Professor';
-  document.getElementById('fac-specialization').value=f.specialization||'';
-  document.getElementById('fac-qualification').value=f.Qualification||'';
-  document.querySelectorAll('#faculty-list .list-item').forEach((el,j)=>el.classList.toggle('active',j===i));
+function renderBusRoutes(filter='') {
+  const fl = filter.toLowerCase();
+  let html = '';
+  for (const [route, stops] of Object.entries(busData)) {
+    const visible = stops.filter(s => !fl || s.stop.toLowerCase().includes(fl));
+    if (fl && !visible.length) continue;
+    html += `<div style="margin-bottom:16px;border:1px solid rgba(255,255,255,.07);border-radius:10px;overflow:hidden">
+      <div style="padding:9px 14px;background:rgba(5,150,105,.12);display:flex;justify-content:space-between;align-items:center">
+        <b style="color:#34d399;font-size:13px">🚌 ${route.replace(/_/g,' ')}</b>
+        <div style="display:flex;gap:6px">
+          <button class="btn btn-g btn-sm" onclick="openBusModal('${esc(route)}')">➕ Add Stop</button>
+          <button class="btn btn-r btn-sm" onclick="deleteBusRoute('${esc(route)}')">🗑️ Route</button>
+        </div>
+      </div>
+      <table style="width:100%;border-collapse:collapse;font-size:12.5px">
+        <thead><tr style="background:#0f0f1e">
+          <th style="padding:8px 12px;text-align:left;color:#666;font-size:10.5px;text-transform:uppercase">Stop</th>
+          <th style="padding:8px 12px;text-align:right;color:#666;font-size:10.5px;text-transform:uppercase">Fee</th>
+          <th style="padding:8px 12px;width:100px"></th>
+        </tr></thead><tbody>`;
+    visible.forEach((s,i) => {
+      html += `<tr style="background:${i%2?'':'rgba(255,255,255,.02)'}">
+        <td style="padding:8px 12px;color:#c7d2fe">${s.stop}</td>
+        <td style="padding:8px 12px;text-align:right;font-weight:700;color:#34d399">₹${(s.fee||0).toLocaleString()}</td>
+        <td style="padding:8px 12px;white-space:nowrap">
+          <button class="btn btn-s btn-sm" onclick="editBusStop('${esc(route)}',${i})">✏️</button>
+          <button class="btn btn-r btn-sm" onclick="deleteBusStop('${esc(route)}',${i})">🗑️</button>
+        </td></tr>`;
+    });
+    html += '</tbody></table></div>';
+  }
+  document.getElementById('bus-routes-container').innerHTML = html || '<p style="color:#666">No routes yet.</p>';
 }
-function addNewFacultyForm(){
-  serverData.faculty_data.push({name:'New Faculty',designation:'Assistant Professor',specialization:'',Qualification:''});
-  renderFacultyList(); editFaculty(serverData.faculty_data.length-1);
+function filterBusStop(q) { renderBusRoutes(q); }
+function openBusModal(route='', idx=-1) {
+  document.getElementById('bm-route').value = route;
+  document.getElementById('bm-stop').value = '';
+  document.getElementById('bm-fee').value = '';
+  document.getElementById('bm-edit-route').value = route;
+  document.getElementById('bm-edit-idx').value = idx;
+  if (route && idx >= 0) {
+    const s = busData[route][idx];
+    document.getElementById('bm-stop').value = s.stop;
+    document.getElementById('bm-fee').value = s.fee;
+    document.getElementById('bus-modal-title').textContent = '✏️ Edit Bus Stop';
+  } else {
+    document.getElementById('bus-modal-title').textContent = '➕ Add Bus Stop';
+  }
+  document.getElementById('bus-modal').classList.add('open');
 }
-function saveFacultyRecord(){
-  const i=parseInt(document.getElementById('fac-index').value); if(isNaN(i)) return;
-  serverData.faculty_data[i]={
-    name:document.getElementById('fac-name').value,
-    designation:document.getElementById('fac-designation').value,
-    specialization:document.getElementById('fac-specialization').value,
-    Qualification:document.getElementById('fac-qualification').value
-  };
-  fetch('/admin/save-faculty',{method:'POST',headers:{'Content-Type':'application/json','X-Admin-Password':adminPwd},body:JSON.stringify(serverData.faculty_data)})
-    .then(r=>r.json()).then(d=>{ renderFacultyList(); updateBadges(); showToast(d.message||'âœ“ Saved'); });
+function closeBusModal() { document.getElementById('bus-modal').classList.remove('open'); }
+function editBusStop(route, idx) { openBusModal(route, idx); }
+function saveBusStop() {
+  const route = (document.getElementById('bm-route').value.trim()||'').toUpperCase().replace(/\s+/g,'_');
+  const stop = document.getElementById('bm-stop').value.trim();
+  const fee = parseInt(document.getElementById('bm-fee').value);
+  const editRoute = document.getElementById('bm-edit-route').value;
+  const editIdx = parseInt(document.getElementById('bm-edit-idx').value);
+  if (!route || !stop || isNaN(fee)) return toast('Route, stop, fee required', true);
+  if (!busData[route]) busData[route] = [];
+  if (editRoute && editIdx >= 0) {
+    busData[editRoute][editIdx] = {stop, fee};
+  } else {
+    busData[route].push({stop, fee});
+  }
+  closeBusModal(); renderBusRoutes();
+  toast('✓ Stop saved. Click "Save All" to persist.');
 }
-function deleteFaculty(){
-  const i=parseInt(document.getElementById('fac-index').value); if(isNaN(i)) return;
-  if(!confirm('Delete this faculty member?')) return;
-  serverData.faculty_data.splice(i,1);
-  fetch('/admin/save-faculty',{method:'POST',headers:{'Content-Type':'application/json','X-Admin-Password':adminPwd},body:JSON.stringify(serverData.faculty_data)})
-    .then(()=>{ renderFacultyList(); updateBadges(); showToast('âœ“ Deleted'); });
+function deleteBusStop(route, idx) {
+  if (!confirm('Delete this stop?')) return;
+  busData[route].splice(idx, 1);
+  if (!busData[route].length) delete busData[route];
+  renderBusRoutes(); toast('🗑️ Stop deleted. Click "Save All" to persist.');
+}
+function deleteBusRoute(route) {
+  if (!confirm('Delete entire route ' + route + '?')) return;
+  delete busData[route]; renderBusRoutes(); toast('🗑️ Route deleted. Click "Save All" to persist.');
+}
+function saveBusFees() {
+  const year = document.getElementById('bus-year').value.trim() || '2026-27';
+  api('/admin/busfees/save','POST', {bus_fees: busData, academic_year: year}).then(d => {
+    if (d.error) return toast(d.error, true);
+    toast('✓ Bus fees saved! Chatbot updated.'); loadBusFees();
+  });
 }
 
-// â”€â”€ Knowledge / FAQ â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-function renderKnowledgeTable(){
-  const kb=serverData.knowledge_data||{}; let html='';
-  Object.entries(kb).forEach(([k,v])=>{
-    html+=`<tr>
-      <td><input value="${k.replace(/"/g,'&quot;')}" onchange="renameKb('${k.replace(/'/g,"\\'")}',this.value)" style="width:100%"/></td>
-      <td><textarea onchange="serverData.knowledge_data['${k.replace(/'/g,"\\'")}'] = this.value" style="min-height:50px;width:100%">${v}</textarea></td>
-      <td><button class="btn-danger" onclick="deleteKb('${k.replace(/'/g,"\\'")}')">âœ•</button></td>
-    </tr>`;
+// ── NOTICES ───────────────────────────────────────────────────────────────────
+let ntcList = [];
+function loadNotices() {
+  api('/admin/notices/list').then(d => {
+    ntcList = d.notices || [];
+    document.getElementById('ntc-count').textContent = ntcList.length + ' notices';
+    document.getElementById('c-ntc').textContent = ntcList.length;
+    document.getElementById('ss-ntc').textContent = ntcList.length;
+    document.getElementById('ntc-tbody').innerHTML = ntcList.map((n,i) => `<tr>
+      <td>${i+1}</td><td style="font-size:11px;color:#a78bfa">${n.id||'—'}</td>
+      <td>${n.date||'—'}</td><td><b>${n.title||'—'}</b></td>
+      <td style="font-size:11px">${n.category||'—'}</td>
+      <td style="white-space:nowrap">
+        <button class="btn btn-s btn-sm" onclick="editNotice(${i})">✏️</button>
+        <button class="btn btn-r btn-sm" onclick="deleteNotice('${esc(n.id||'')}')">🗑️</button>
+      </td></tr>`).join('');
   });
-  document.getElementById('knowledge-tbody').innerHTML=html;
 }
-function addKnowledgeRow(){
-  const key=prompt('Question key:'); if(!key) return;
-  serverData.knowledge_data[key.trim()]='';
-  renderKnowledgeTable();
+function editNotice(i) {
+  const n = ntcList[i];
+  document.getElementById('ntc-title').value = n.title||'';
+  document.getElementById('ntc-date').value = n.date||'';
+  document.getElementById('ntc-cat').value = n.category||'general';
+  document.getElementById('ntc-app').value = n.applicable_to||'';
+  document.getElementById('ntc-content').value = n.content||'';
+  document.getElementById('ntc-edit-id').value = n.id||'';
 }
-function renameKb(old,nw){ if(old!==nw){ serverData.knowledge_data[nw]=serverData.knowledge_data[old]; delete serverData.knowledge_data[old]; renderKnowledgeTable(); } }
-function deleteKb(k){ if(confirm(`Delete "${k}"?`)){ delete serverData.knowledge_data[k]; renderKnowledgeTable(); } }
-function saveKnowledgeData(){
-  fetch('/admin/save-knowledge',{method:'POST',headers:{'Content-Type':'application/json','X-Admin-Password':adminPwd},body:JSON.stringify(serverData.knowledge_data)})
-    .then(r=>r.json()).then(d=>{ updateBadges(); showToast(d.message||'âœ“ FAQ saved'); });
+function clearNtcForm() {
+  ['ntc-title','ntc-content','ntc-app'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('ntc-edit-id').value = '';
 }
+function saveNotice() {
+  const eid = document.getElementById('ntc-edit-id').value;
+  const body = {
+    title: document.getElementById('ntc-title').value.trim(),
+    date: document.getElementById('ntc-date').value || new Date().toISOString().slice(0,10),
+    category: document.getElementById('ntc-cat').value,
+    applicable_to: document.getElementById('ntc-app').value.trim(),
+    content: document.getElementById('ntc-content').value.trim()
+  };
+  if (!body.title || !body.content) return toast('Title and content required', true);
+  if (eid) {
+    const idx = ntcList.findIndex(n => n.id === eid);
+    if (idx >= 0) { ntcList[idx] = {...ntcList[idx], ...body}; }
+    api('/admin/save-circular','POST', ntcList).then(()=>{ toast('✓ Notice updated'); clearNtcForm(); loadNotices(); });
+  } else {
+    api('/admin/notices/add','POST', body).then(d => {
+      if (d.error) return toast(d.error, true);
+      toast('✓ Notice added'); clearNtcForm(); loadNotices();
+    });
+  }
+}
+function deleteNotice(id) {
+  if (!confirm('Delete notice?')) return;
+  api('/admin/notices/delete','DELETE', {id}).then(d => {
+    if (d.error) return toast(d.error, true);
+    toast('🗑️ Deleted'); clearNtcForm(); loadNotices();
+  });
+}
+</script>
+
+<script>
+// ── SUBJECTS ─────────────────────────────────────────────────────────────────
+let subList = [];
+function loadSubjects() {
+  api('/admin/subjects/list').then(d => {
+    subList = d.subjects || [];
+    document.getElementById('c-sub').textContent = subList.length;
+    document.getElementById('sub-tbody').innerHTML = subList.map((s,i) => `<tr>
+      <td>${i+1}</td><td><b>${s.name||'—'}</b></td><td>${s.code||'—'}</td>
+      <td>${s.credits||'—'}</td><td>${s.semester||'—'}</td><td>${s.faculty||'—'}</td>
+      <td style="white-space:nowrap">
+        <button class="btn btn-s btn-sm" onclick="editSubject('${esc(s.id)}')">✏️</button>
+        <button class="btn btn-r btn-sm" onclick="deleteSubject('${esc(s.id)}')">🗑️</button>
+      </td></tr>`).join('');
+  });
+}
+function editSubject(id) {
+  const s = subList.find(x => x.id === id);
+  if (!s) return;
+  document.getElementById('sub-name').value = s.name||'';
+  document.getElementById('sub-code').value = s.code||'';
+  document.getElementById('sub-credits').value = s.credits||'';
+  document.getElementById('sub-sem').value = s.semester||'';
+  document.getElementById('sub-faculty').value = s.faculty||'';
+  document.getElementById('sub-edit-id').value = s.id;
+}
+function clearSubForm() {
+  ['sub-name','sub-code','sub-credits','sub-sem','sub-faculty'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('sub-edit-id').value = '';
+}
+function saveSubject() {
+  const eid = document.getElementById('sub-edit-id').value;
+  const body = {
+    name: document.getElementById('sub-name').value.trim(),
+    code: document.getElementById('sub-code').value.trim(),
+    credits: document.getElementById('sub-credits').value,
+    semester: document.getElementById('sub-sem').value.trim(),
+    faculty: document.getElementById('sub-faculty').value.trim()
+  };
+  if (!body.name) return toast('Name required', true);
+  if (eid) {
+    body.id = eid;
+    api('/admin/subjects/update','PUT', body).then(d => {
+      if (d.error) return toast(d.error, true);
+      toast('✓ Subject updated'); clearSubForm(); loadSubjects();
+    });
+  } else {
+    api('/admin/subjects/add','POST', body).then(d => {
+      if (d.error) return toast(d.error, true);
+      toast('✓ Subject added'); clearSubForm(); loadSubjects();
+    });
+  }
+}
+function deleteSubject(id) {
+  if (!confirm('Delete subject?')) return;
+  api('/admin/subjects/delete','DELETE', {id}).then(d => {
+    if (d.error) return toast(d.error, true);
+    toast('🗑️ Deleted'); loadSubjects();
+  });
+}
+
+// ── PLACEMENTS ────────────────────────────────────────────────────────────────
+let plcList = [];
+function loadPlacements() {
+  api('/admin/placements/list').then(d => {
+    plcList = d.placements || [];
+    document.getElementById('plc-count').textContent = plcList.length + ' records';
+    document.getElementById('c-plc').textContent = plcList.length;
+    document.getElementById('plc-tbody').innerHTML = plcList.map((p,i) => `<tr>
+      <td>${i+1}</td><td><b>${p.company||'—'}</b></td><td style="color:#34d399">${p.package||'—'}</td>
+      <td>${p.eligibility||'—'}</td><td>${p.date||'—'}</td>
+      <td style="white-space:nowrap">
+        <button class="btn btn-s btn-sm" onclick="editPlacement('${esc(p.id)}')">✏️</button>
+        <button class="btn btn-r btn-sm" onclick="deletePlacement('${esc(p.id)}')">🗑️</button>
+      </td></tr>`).join('');
+  });
+}
+function editPlacement(id) {
+  const p = plcList.find(x => x.id === id);
+  if (!p) return;
+  document.getElementById('plc-company').value = p.company||'';
+  document.getElementById('plc-package').value = p.package||'';
+  document.getElementById('plc-eligibility').value = p.eligibility||'';
+  document.getElementById('plc-link').value = p.link||'';
+  document.getElementById('plc-date').value = p.date||'';
+  document.getElementById('plc-edit-id').value = p.id;
+}
+function clearPlcForm() {
+  ['plc-company','plc-package','plc-eligibility','plc-link','plc-date'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('plc-edit-id').value = '';
+}
+function savePlacement() {
+  const eid = document.getElementById('plc-edit-id').value;
+  const body = {
+    company: document.getElementById('plc-company').value.trim(),
+    package: document.getElementById('plc-package').value.trim(),
+    eligibility: document.getElementById('plc-eligibility').value.trim(),
+    link: document.getElementById('plc-link').value.trim(),
+    date: document.getElementById('plc-date').value
+  };
+  if (!body.company) return toast('Company required', true);
+  if (eid) {
+    body.id = eid;
+    api('/admin/placements/update','PUT', body).then(d => {
+      if (d.error) return toast(d.error, true);
+      toast('✓ Updated'); clearPlcForm(); loadPlacements();
+    });
+  } else {
+    api('/admin/placements/add','POST', body).then(d => {
+      if (d.error) return toast(d.error, true);
+      toast('✓ Added'); clearPlcForm(); loadPlacements();
+    });
+  }
+}
+function deletePlacement(id) {
+  if (!confirm('Delete placement record?')) return;
+  api('/admin/placements/delete','DELETE', {id}).then(d => {
+    if (d.error) return toast(d.error, true);
+    toast('🗑️ Deleted'); loadPlacements();
+  });
+}
+
+// ── EVENTS ────────────────────────────────────────────────────────────────────
+let evtList = [];
+function loadEvents() {
+  api('/admin/events/list').then(d => {
+    evtList = d.events || [];
+    document.getElementById('evt-count').textContent = evtList.length + ' events';
+    document.getElementById('c-evt').textContent = evtList.length;
+    document.getElementById('evt-tbody').innerHTML = evtList.map((e,i) => `<tr>
+      <td>${i+1}</td><td><b>${e.title||'—'}</b></td><td>${e.date||'—'}</td>
+      <td>${e.venue||'—'}</td><td style="font-size:11px">${trunc(e.description||'', 50)}</td>
+      <td style="white-space:nowrap">
+        <button class="btn btn-s btn-sm" onclick="editEvent('${esc(e.id)}')">✏️</button>
+        <button class="btn btn-r btn-sm" onclick="deleteEvent('${esc(e.id)}')">🗑️</button>
+      </td></tr>`).join('');
+  });
+}
+function editEvent(id) {
+  const e = evtList.find(x => x.id === id);
+  if (!e) return;
+  document.getElementById('evt-name').value = e.title||'';
+  document.getElementById('evt-date').value = e.date||'';
+  document.getElementById('evt-venue').value = e.venue||'';
+  document.getElementById('evt-desc').value = e.description||'';
+  document.getElementById('evt-edit-id').value = e.id;
+}
+function clearEvtForm() {
+  ['evt-name','evt-date','evt-venue','evt-desc'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('evt-edit-id').value = '';
+}
+function saveEvent() {
+  const eid = document.getElementById('evt-edit-id').value;
+  const body = {
+    title: document.getElementById('evt-name').value.trim(),
+    date: document.getElementById('evt-date').value,
+    venue: document.getElementById('evt-venue').value.trim(),
+    description: document.getElementById('evt-desc').value.trim()
+  };
+  if (!body.title) return toast('Event name required', true);
+  if (eid) {
+    body.id = eid;
+    api('/admin/events/update','PUT', body).then(d => {
+      if (d.error) return toast(d.error, true);
+      toast('✓ Event updated'); clearEvtForm(); loadEvents();
+    });
+  } else {
+    api('/admin/events/add','POST', body).then(d => {
+      if (d.error) return toast(d.error, true);
+      toast('✓ Event added'); clearEvtForm(); loadEvents();
+    });
+  }
+}
+function deleteEvent(id) {
+  if (!confirm('Delete event?')) return;
+  api('/admin/events/delete','DELETE', {id}).then(d => {
+    if (d.error) return toast(d.error, true);
+    toast('🗑️ Deleted'); loadEvents();
+  });
+}
+
+// ── KNOWLEDGE BASE ────────────────────────────────────────────────────────────
+let kbList = [];
+function loadKnowledge() {
+  api('/admin/knowledge/list').then(d => {
+    kbList = d.knowledge || [];
+    const adminOnly = kbList.filter(k => k.source !== 'base');
+    document.getElementById('kb-count').textContent = kbList.length + ' entries';
+    document.getElementById('c-kb').textContent = adminOnly.length;
+    document.getElementById('kb-tbody').innerHTML = kbList.map((k,i) => `<tr>
+      <td>${i+1}</td><td><b>${k.title||'—'}</b></td>
+      <td style="font-size:11px">${k.category||k.source||'—'}</td>
+      <td style="font-size:11px">${trunc(k.text||'',70)}</td>
+      <td style="white-space:nowrap">
+        ${k.source !== 'base' ? `<button class="btn btn-s btn-sm" onclick="editKB('${esc(k.id||k.title)}')">✏️</button>
+        <button class="btn btn-r btn-sm" onclick="deleteKB('${esc(k.id||k.title)}')">🗑️</button>` : '<span style="color:#444;font-size:11px">base</span>'}
+      </td></tr>`).join('');
+  });
+}
+function editKB(id) {
+  const k = kbList.find(x => (x.id||x.title) === id);
+  if (!k) return;
+  document.getElementById('kb-title').value = k.title||'';
+  document.getElementById('kb-cat').value = k.category||'general';
+  document.getElementById('kb-content').value = k.text||'';
+  document.getElementById('kb-edit-id').value = id;
+}
+function clearKBForm() {
+  ['kb-title','kb-content'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('kb-edit-id').value = '';
+}
+function saveKB() {
+  const eid = document.getElementById('kb-edit-id').value;
+  const body = {
+    title: document.getElementById('kb-title').value.trim(),
+    text: document.getElementById('kb-content').value.trim(),
+    category: document.getElementById('kb-cat').value
+  };
+  if (!body.title || !body.text) return toast('Title and content required', true);
+  if (eid) {
+    body.id = eid;
+    // Delete old and re-add
+    api('/admin/knowledge/delete','DELETE', {id: eid}).then(() => {
+      api('/admin/knowledge/add','POST', body).then(d => {
+        if (d.error) return toast(d.error, true);
+        toast('✓ Entry updated'); clearKBForm(); loadKnowledge();
+      });
+    });
+  } else {
+    api('/admin/knowledge/add','POST', body).then(d => {
+      if (d.error) return toast(d.error, true);
+      toast('✓ Entry added — chatbot updated!'); clearKBForm(); loadKnowledge();
+    });
+  }
+}
+function deleteKB(id) {
+  if (!confirm('Delete knowledge entry?')) return;
+  api('/admin/knowledge/delete','DELETE', {id}).then(d => {
+    if (d.error) return toast(d.error, true);
+    toast('🗑️ Deleted'); loadKnowledge();
+  });
+}
+
+// ── DEPT INFO ─────────────────────────────────────────────────────────────────
+function loadDeptInfo() {
+  api('/admin/deptinfo/get').then(d => {
+    document.getElementById('di-vision').value = d.vision||'';
+    document.getElementById('di-mission').value = d.mission||'';
+    document.getElementById('di-peos').value = (d.peos||[]).join('\n');
+    document.getElementById('di-psos').value = (d.psos||[]).join('\n');
+    document.getElementById('di-hod').value = d.hod_message||'';
+    document.getElementById('di-about').value = d.about||'';
+  });
+}
+function saveDeptInfo() {
+  const body = {
+    vision: document.getElementById('di-vision').value.trim(),
+    mission: document.getElementById('di-mission').value.trim(),
+    peos: document.getElementById('di-peos').value.split('\n').map(l=>l.trim()).filter(Boolean),
+    psos: document.getElementById('di-psos').value.split('\n').map(l=>l.trim()).filter(Boolean),
+    hod_message: document.getElementById('di-hod').value.trim(),
+    about: document.getElementById('di-about').value.trim()
+  };
+  api('/admin/deptinfo/save','POST', body).then(d => {
+    if (d.error) return toast(d.error, true);
+    toast('✓ Department info saved — chatbot updated!');
+  });
+}
+
+// ── AUDIT LOG ─────────────────────────────────────────────────────────────────
+function loadAudit() {
+  api('/admin/audit/list').then(d => {
+    const list = d.audit || [];
+    document.getElementById('audit-tbody').innerHTML = list.map(e => `<tr>
+      <td style="font-size:11.5px;color:#666;white-space:nowrap">${(e.ts||'').replace('T',' ').slice(0,19)}</td>
+      <td style="color:#a78bfa">${e.action||'—'}</td>
+    </tr>`).join('') || '<tr><td colspan="2" style="color:#666;padding:16px">No audit entries.</td></tr>';
+  });
+}
+
+// Close modal on backdrop click
+document.getElementById('bus-modal').addEventListener('click', function(e) {
+  if (e.target === this) closeBusModal();
+});
 </script>
 </body>
 </html>

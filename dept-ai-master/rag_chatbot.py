@@ -695,6 +695,161 @@ def load_curriculum():
             _CURRICULUM = json.load(f)
         print(f"✓ Curriculum loaded: {len(_CURRICULUM)} semesters")
 
+# ─────────────────────────────────────────────────────────────────────────────
+# Bus Fee Module
+# ─────────────────────────────────────────────────────────────────────────────
+_BUS_FEES: Dict = {}
+_BUS_YEAR: str = "2026-27"
+
+def load_bus_fees():
+    global _BUS_FEES, _BUS_YEAR
+    if os.path.exists("nbkr_bus_fees.json"):
+        with open("nbkr_bus_fees.json", "r", encoding="utf-8") as f:
+            data = json.load(f)
+        _BUS_FEES = data.get("bus_fees", {})
+        _BUS_YEAR = data.get("academic_year", "2026-27")
+        total = sum(len(v) for v in _BUS_FEES.values())
+        print(f"✓ Bus fees loaded: {len(_BUS_FEES)} routes, {total} stops")
+
+def _search_bus_fee(location: str) -> List[Dict]:
+    """Search all stops case-insensitively. Returns list of matches with route info."""
+    loc = location.strip().lower()
+    results = []
+    for route, stops in _BUS_FEES.items():
+        for entry in stops:
+            stop_parts = [s.strip().lower() for s in entry["stop"].replace("(","").replace(")","").split(",")]
+            if any(loc == part or loc in part or part in loc for part in stop_parts):
+                results.append({
+                    "location": entry["stop"],
+                    "fee": entry["fee"],
+                    "route": route.replace("_", " ").title(),
+                    "year": _BUS_YEAR
+                })
+    return results
+
+def build_bus_fee_card(matches: List[Dict], query: str) -> str:
+    """Build a structured HTML card for bus fee results."""
+    if not matches:
+        return f"""
+<div style="font-family:'Segoe UI',sans-serif;max-width:500px;margin:8px 0">
+  <div style="background:linear-gradient(135deg,#e65100,#bf360c);color:#fff;
+              padding:12px 18px;border-radius:10px 10px 0 0;font-size:14px;font-weight:700">
+    🚌 Bus Fee Information
+  </div>
+  <div style="background:#fff;border:1px solid #e5e7eb;border-top:none;
+              border-radius:0 0 10px 10px;padding:14px 18px">
+    <p style="font-size:13px;color:#c62828">Sorry, bus fee information for
+    <b>'{query}'</b> is not available in the current dataset.</p>
+  </div>
+</div>"""
+
+    # Build rows for each match
+    rows = ""
+    for i, m in enumerate(matches):
+        bg = "background:#f8f9ff;" if i % 2 == 0 else ""
+        rows += f"""
+<div style="display:flex;justify-content:space-between;align-items:center;
+            padding:10px 18px;border-bottom:1px solid #eee;{bg}">
+  <div>
+    <div style="font-size:13px;font-weight:600;color:#1a1a2e">📍 {m['location']}</div>
+    <div style="font-size:11px;color:#888;margin-top:2px">Route: {m['route']}</div>
+  </div>
+  <div style="text-align:right">
+    <div style="font-size:16px;font-weight:700;color:#1b5e20">₹{m['fee']:,}</div>
+    <div style="font-size:10px;color:#888">Academic Year: {m['year']}</div>
+  </div>
+</div>"""
+
+    title = f"Bus Fee — {matches[0]['location']}" if len(matches) == 1 else \
+            f"Bus Fee Results for '{query}' ({len(matches)} match{'es' if len(matches)>1 else ''})"
+
+    return f"""
+<div style="font-family:'Segoe UI',sans-serif;max-width:540px;margin:8px 0">
+  <div style="background:linear-gradient(135deg,#1b5e20,#2e7d32);color:#fff;
+              padding:12px 18px;border-radius:10px 10px 0 0;font-size:14px;font-weight:700">
+    🚌 {title}
+  </div>
+  <div style="background:#fff;border:1px solid #e5e7eb;border-top:none;
+              border-radius:0 0 10px 10px;overflow:hidden">
+    {rows}
+    <div style="padding:9px 18px;background:#f0f4ff;font-size:11px;color:#555">
+      📌 N.B.K.R. Institute of Science &amp; Technology, Vidyanagar
+    </div>
+  </div>
+</div>"""
+
+def build_all_routes_card() -> str:
+    """Show all routes and their stops with fees."""
+    if not _BUS_FEES:
+        return '<p style="font-family:Segoe UI,sans-serif;color:#c62828">Bus fee data not available.</p>'
+
+    th = 'style="border:1px solid #c5cae9;padding:8px 12px;background:#e8eaf6;font-size:11px;font-weight:700;color:#1a237e;text-align:left"'
+    sections = ""
+    for route, stops in _BUS_FEES.items():
+        route_label = route.replace("_", " ").title()
+        rows = ""
+        for i, s in enumerate(stops):
+            bg = "background:#f8f9ff;" if i % 2 == 0 else ""
+            rows += (f'<tr style="{bg}">'
+                     f'<td style="border:1px solid #e8eaf6;padding:7px 12px;font-size:12.5px;color:#333">{s["stop"]}</td>'
+                     f'<td style="border:1px solid #e8eaf6;padding:7px 12px;font-size:13px;font-weight:700;color:#1b5e20;text-align:right">₹{s["fee"]:,}</td>'
+                     f'</tr>')
+        sections += f"""
+<div style="margin-bottom:14px">
+  <div style="padding:8px 14px;background:linear-gradient(135deg,#1b5e20,#2e7d32);
+              color:#fff;font-size:12px;font-weight:700;border-radius:6px;margin-bottom:4px">
+    🚌 {route_label}
+  </div>
+  <div style="overflow-x:auto;border:1px solid #c5cae9;border-radius:0 0 6px 6px">
+    <table style="width:100%;border-collapse:collapse">
+      <thead><tr><th {th}>Boarding Point</th><th {th} style="text-align:right">Fee (Annual)</th></tr></thead>
+      <tbody>{rows}</tbody>
+    </table>
+  </div>
+</div>"""
+
+    return f"""
+<div style="font-family:'Segoe UI',sans-serif;margin:8px 0">
+  <div style="background:linear-gradient(135deg,#1b5e20,#2e7d32);color:#fff;
+              padding:11px 16px;border-radius:8px 8px 0 0;display:flex;
+              justify-content:space-between;align-items:center">
+    <b>🚌 NBKR Bus Fee Structure — {_BUS_YEAR}</b>
+    <span style="font-size:11px;opacity:.8">{len(_BUS_FEES)} Routes</span>
+  </div>
+  <div style="background:#fff;border:1px solid #c5cae9;border-top:none;
+              border-radius:0 0 8px 8px;padding:14px">
+    {sections}
+  </div>
+</div>"""
+
+def handle_bus_fee_query(query: str) -> Optional[str]:
+    """Return bus fee HTML if query is bus-fee related, else None."""
+    ml = query.lower().strip()
+    bus_kw = {"bus fee","bus fare","bus charge","transportation fee","transport fee",
+              "bus fees","bus cost","boarding fee","bus route","bus from",
+              "fee for bus","how much bus","bus amount"}
+    if not any(kw in ml for kw in bus_kw) and not re.search(r'\bbus\b', ml):
+        return None
+    if not _BUS_FEES:
+        return None
+
+    # Show all routes
+    if any(w in ml for w in ["all","routes","list","show all","all routes","all fees"]):
+        return build_all_routes_card()
+
+    # Extract location from query — strip bus-related words
+    location = re.sub(
+        r'\b(bus|fee|fees|fare|charge|charges|transport|transportation|'
+        r'from|for|what|is|the|how|much|cost|amount|boarding|route|routes)\b',
+        '', ml, flags=re.IGNORECASE
+    ).strip().strip('?').strip()
+
+    if not location:
+        return build_all_routes_card()
+
+    matches = _search_bus_fee(location)
+    return build_bus_fee_card(matches, location)
+
 def build_curriculum_card(sem_key: str, data: Dict) -> str:
     """Build a structured HTML card — subjects and labs shown in separate clear sections."""
     grad_map = {
@@ -2286,6 +2441,7 @@ def _help_card() -> str:
         ("🏢 About NBKR",  "Institute overview, departments, facilities"),
         ("🎓 Students",    "Roll number lookup, section/branch/CGPA search — try: '23KB1A3062'"),
         ("📖 Curriculum",  "Subjects by year/semester — try: '2nd year sem 2 subjects'"),
+        ("🚌 Bus Fees",    "Fee by location — try: 'bus fee for Nellore' or 'bus fee from Gudur'"),
     ]
     return _info_card("💡 What I can help you with", rows)
 
@@ -2349,6 +2505,11 @@ def get_response(query: str, conn_id: str = "default") -> str:
 
     if intent == "help":
         return _help_card()
+
+    # ── Bus fee query ─────────────────────────────────────────────────────
+    bus_reply = handle_bus_fee_query(query)
+    if bus_reply is not None:
+        return bus_reply
 
     # ── Curriculum query ──────────────────────────────────────────────────
     curric_reply = handle_curriculum_query(query)
@@ -2519,6 +2680,11 @@ async def lifespan(app: FastAPI):
     load_faculty_data()
     load_circulars()
     load_curriculum()
+    load_bus_fees()
+    load_placements()
+    load_events()
+    load_dept_info()
+    load_subjects_list()
     _load_student_dw()
     ok = initialize_rag()
     print("✓ RAG ready" if ok else "⚠ RAG unavailable — check data files")
@@ -3679,6 +3845,223 @@ async def admin_audit_list(request: Request):
             entries = json.load(f)
         return JSONResponse({"audit":list(reversed(entries)),"total":len(entries)})
     return JSONResponse({"audit":[],"total":0})
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Admin — Bus Fees CRUD
+# ─────────────────────────────────────────────────────────────────────────────
+@app.get("/admin/busfees/list")
+async def admin_busfees_list(request: Request):
+    if not _check_admin(request): return JSONResponse({"error":"Unauthorized"},status_code=401)
+    return JSONResponse({"bus_fees": _BUS_FEES, "academic_year": _BUS_YEAR})
+
+@app.post("/admin/busfees/save")
+async def admin_busfees_save(request: Request):
+    if not _check_admin(request): return JSONResponse({"error":"Unauthorized"},status_code=401)
+    global _BUS_FEES, _BUS_YEAR
+    body = await request.json()
+    _BUS_FEES = body.get("bus_fees", _BUS_FEES)
+    _BUS_YEAR = body.get("academic_year", _BUS_YEAR)
+    data = {"institution":"N.B.K.R. Institute of Science and Technology, Vidyanagar",
+            "academic_year": _BUS_YEAR, "bus_fees": _BUS_FEES}
+    with open("nbkr_bus_fees.json","w",encoding="utf-8") as f:
+        json.dump(data, f, indent=2, ensure_ascii=False)
+    _audit_log("BUSFEES_SAVE")
+    return JSONResponse({"status":"saved","routes":len(_BUS_FEES)})
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Admin — Placements CRUD
+# ─────────────────────────────────────────────────────────────────────────────
+_PLACEMENTS: List[Dict] = []
+
+def load_placements():
+    global _PLACEMENTS
+    if os.path.exists("nbkr_placements.json"):
+        with open("nbkr_placements.json","r",encoding="utf-8") as f:
+            _PLACEMENTS = json.load(f)
+        print(f"✓ Placements loaded: {len(_PLACEMENTS)} records")
+
+@app.get("/admin/placements/list")
+async def admin_placements_list(request: Request):
+    if not _check_admin(request): return JSONResponse({"error":"Unauthorized"},status_code=401)
+    return JSONResponse({"placements":_PLACEMENTS,"total":len(_PLACEMENTS)})
+
+@app.post("/admin/placements/add")
+async def admin_placements_add(request: Request):
+    if not _check_admin(request): return JSONResponse({"error":"Unauthorized"},status_code=401)
+    body = await request.json()
+    if not body.get("company"): return JSONResponse({"error":"company required"},status_code=400)
+    body.setdefault("id", f"PL-{datetime.now().strftime('%Y%m%d%H%M%S')}")
+    _PLACEMENTS.append(body)
+    with open("nbkr_placements.json","w",encoding="utf-8") as f:
+        json.dump(_PLACEMENTS, f, indent=2, ensure_ascii=False)
+    _audit_log(f"PLACEMENT_ADD:{body['company']}")
+    return JSONResponse({"status":"added","total":len(_PLACEMENTS)})
+
+@app.put("/admin/placements/update")
+async def admin_placements_update(request: Request):
+    if not _check_admin(request): return JSONResponse({"error":"Unauthorized"},status_code=401)
+    body = await request.json()
+    pid = body.get("id","")
+    idx = next((i for i,p in enumerate(_PLACEMENTS) if p.get("id")==pid), None)
+    if idx is None: return JSONResponse({"error":"Not found"},status_code=404)
+    _PLACEMENTS[idx].update(body)
+    with open("nbkr_placements.json","w",encoding="utf-8") as f:
+        json.dump(_PLACEMENTS, f, indent=2, ensure_ascii=False)
+    _audit_log(f"PLACEMENT_UPDATE:{pid}")
+    return JSONResponse({"status":"updated"})
+
+@app.delete("/admin/placements/delete")
+async def admin_placements_delete(request: Request):
+    if not _check_admin(request): return JSONResponse({"error":"Unauthorized"},status_code=401)
+    body = await request.json()
+    pid = body.get("id","")
+    idx = next((i for i,p in enumerate(_PLACEMENTS) if p.get("id")==pid), None)
+    if idx is None: return JSONResponse({"error":"Not found"},status_code=404)
+    _PLACEMENTS.pop(idx)
+    with open("nbkr_placements.json","w",encoding="utf-8") as f:
+        json.dump(_PLACEMENTS, f, indent=2, ensure_ascii=False)
+    _audit_log(f"PLACEMENT_DELETE:{pid}")
+    return JSONResponse({"status":"deleted","total":len(_PLACEMENTS)})
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Admin — Events CRUD
+# ─────────────────────────────────────────────────────────────────────────────
+_EVENTS: List[Dict] = []
+
+def load_events():
+    global _EVENTS
+    if os.path.exists("nbkr_events.json"):
+        with open("nbkr_events.json","r",encoding="utf-8") as f:
+            _EVENTS = json.load(f)
+        print(f"✓ Events loaded: {len(_EVENTS)} records")
+
+@app.get("/admin/events/list")
+async def admin_events_list(request: Request):
+    if not _check_admin(request): return JSONResponse({"error":"Unauthorized"},status_code=401)
+    return JSONResponse({"events":_EVENTS,"total":len(_EVENTS)})
+
+@app.post("/admin/events/add")
+async def admin_events_add(request: Request):
+    if not _check_admin(request): return JSONResponse({"error":"Unauthorized"},status_code=401)
+    body = await request.json()
+    if not body.get("title"): return JSONResponse({"error":"title required"},status_code=400)
+    body.setdefault("id", f"EV-{datetime.now().strftime('%Y%m%d%H%M%S')}")
+    _EVENTS.append(body)
+    with open("nbkr_events.json","w",encoding="utf-8") as f:
+        json.dump(_EVENTS, f, indent=2, ensure_ascii=False)
+    _audit_log(f"EVENT_ADD:{body['title']}")
+    return JSONResponse({"status":"added","total":len(_EVENTS)})
+
+@app.put("/admin/events/update")
+async def admin_events_update(request: Request):
+    if not _check_admin(request): return JSONResponse({"error":"Unauthorized"},status_code=401)
+    body = await request.json()
+    eid = body.get("id","")
+    idx = next((i for i,e in enumerate(_EVENTS) if e.get("id")==eid), None)
+    if idx is None: return JSONResponse({"error":"Not found"},status_code=404)
+    _EVENTS[idx].update(body)
+    with open("nbkr_events.json","w",encoding="utf-8") as f:
+        json.dump(_EVENTS, f, indent=2, ensure_ascii=False)
+    _audit_log(f"EVENT_UPDATE:{eid}")
+    return JSONResponse({"status":"updated"})
+
+@app.delete("/admin/events/delete")
+async def admin_events_delete(request: Request):
+    if not _check_admin(request): return JSONResponse({"error":"Unauthorized"},status_code=401)
+    body = await request.json()
+    eid = body.get("id","")
+    idx = next((i for i,e in enumerate(_EVENTS) if e.get("id")==eid), None)
+    if idx is None: return JSONResponse({"error":"Not found"},status_code=404)
+    _EVENTS.pop(idx)
+    with open("nbkr_events.json","w",encoding="utf-8") as f:
+        json.dump(_EVENTS, f, indent=2, ensure_ascii=False)
+    _audit_log(f"EVENT_DELETE:{eid}")
+    return JSONResponse({"status":"deleted","total":len(_EVENTS)})
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Admin — Department Info CRUD
+# ─────────────────────────────────────────────────────────────────────────────
+_DEPT_INFO: Dict = {}
+
+def load_dept_info():
+    global _DEPT_INFO
+    if os.path.exists("nbkr_department_info.json"):
+        with open("nbkr_department_info.json","r",encoding="utf-8") as f:
+            _DEPT_INFO = json.load(f)
+        print("✓ Department info loaded")
+
+@app.get("/admin/deptinfo/get")
+async def admin_deptinfo_get(request: Request):
+    if not _check_admin(request): return JSONResponse({"error":"Unauthorized"},status_code=401)
+    return JSONResponse(_DEPT_INFO)
+
+@app.post("/admin/deptinfo/save")
+async def admin_deptinfo_save(request: Request):
+    global _DEPT_INFO
+    if not _check_admin(request): return JSONResponse({"error":"Unauthorized"},status_code=401)
+    body = await request.json()
+    _DEPT_INFO.update(body)
+    with open("nbkr_department_info.json","w",encoding="utf-8") as f:
+        json.dump(_DEPT_INFO, f, indent=2, ensure_ascii=False)
+    initialize_rag()
+    _audit_log("DEPTINFO_SAVE")
+    return JSONResponse({"status":"saved"})
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Admin — Subjects CRUD
+# ─────────────────────────────────────────────────────────────────────────────
+_SUBJECTS_LIST: List[Dict] = []
+
+def load_subjects_list():
+    global _SUBJECTS_LIST
+    if os.path.exists("nbkr_subjects.json"):
+        with open("nbkr_subjects.json","r",encoding="utf-8") as f:
+            _SUBJECTS_LIST = json.load(f)
+        print(f"✓ Subjects list loaded: {len(_SUBJECTS_LIST)} subjects")
+
+@app.get("/admin/subjects/list")
+async def admin_subjects_list(request: Request):
+    if not _check_admin(request): return JSONResponse({"error":"Unauthorized"},status_code=401)
+    return JSONResponse({"subjects":_SUBJECTS_LIST,"total":len(_SUBJECTS_LIST)})
+
+@app.post("/admin/subjects/add")
+async def admin_subjects_add(request: Request):
+    if not _check_admin(request): return JSONResponse({"error":"Unauthorized"},status_code=401)
+    body = await request.json()
+    if not body.get("name"): return JSONResponse({"error":"name required"},status_code=400)
+    body.setdefault("id", f"SB-{datetime.now().strftime('%Y%m%d%H%M%S')}")
+    _SUBJECTS_LIST.append(body)
+    with open("nbkr_subjects.json","w",encoding="utf-8") as f:
+        json.dump(_SUBJECTS_LIST, f, indent=2, ensure_ascii=False)
+    _audit_log(f"SUBJECT_ADD:{body['name']}")
+    return JSONResponse({"status":"added","total":len(_SUBJECTS_LIST)})
+
+@app.put("/admin/subjects/update")
+async def admin_subjects_update(request: Request):
+    if not _check_admin(request): return JSONResponse({"error":"Unauthorized"},status_code=401)
+    body = await request.json()
+    sid = body.get("id","")
+    idx = next((i for i,s in enumerate(_SUBJECTS_LIST) if s.get("id")==sid), None)
+    if idx is None: return JSONResponse({"error":"Not found"},status_code=404)
+    _SUBJECTS_LIST[idx].update(body)
+    with open("nbkr_subjects.json","w",encoding="utf-8") as f:
+        json.dump(_SUBJECTS_LIST, f, indent=2, ensure_ascii=False)
+    _audit_log(f"SUBJECT_UPDATE:{sid}")
+    return JSONResponse({"status":"updated"})
+
+@app.delete("/admin/subjects/delete")
+async def admin_subjects_delete(request: Request):
+    if not _check_admin(request): return JSONResponse({"error":"Unauthorized"},status_code=401)
+    body = await request.json()
+    sid = body.get("id","")
+    idx = next((i for i,s in enumerate(_SUBJECTS_LIST) if s.get("id")==sid), None)
+    if idx is None: return JSONResponse({"error":"Not found"},status_code=404)
+    _SUBJECTS_LIST.pop(idx)
+    with open("nbkr_subjects.json","w",encoding="utf-8") as f:
+        json.dump(_SUBJECTS_LIST, f, indent=2, ensure_ascii=False)
+    _audit_log(f"SUBJECT_DELETE:{sid}")
+    return JSONResponse({"status":"deleted","total":len(_SUBJECTS_LIST)})
 
 
 def _audit_log(action: str):
