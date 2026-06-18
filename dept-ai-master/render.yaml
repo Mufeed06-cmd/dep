@@ -4,6 +4,7 @@ services:
     env: python
     region: singapore
     plan: free
+    rootDir: dept-ai-master
     buildCommand: pip install -r requirements.txt && python -m spacy download en_core_web_sm
     startCommand: uvicorn rag_chatbot:app --host 0.0.0.0 --port $PORT
     envVars:
